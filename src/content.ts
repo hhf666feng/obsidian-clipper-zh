@@ -12,6 +12,7 @@ import { saveFile } from './utils/file-utils';
 import { debugLog } from './utils/debug';
 import { updateSidebarWidth, addResizeHandle, cleanupResizeHandlers } from './utils/iframe-resize';
 import { parseForClip } from './utils/clip-utils';
+import { normalizeLazyLoadedImages } from './utils/lazy-images';
 
 declare global {
 	interface Window {
@@ -153,6 +154,7 @@ declare global {
 		if (request.action === "copyMarkdownToClipboard") {
 			flattenShadowDom(document).then(() => {
 				try {
+					normalizeLazyLoadedImages(document, document.baseURI);
 					const defuddled = parseForClip(document);
 
 					// Convert HTML content to markdown
@@ -178,6 +180,7 @@ declare global {
 		if (request.action === "saveMarkdownToFile") {
 			flattenShadowDom(document).then(async () => {
 				try {
+					normalizeLazyLoadedImages(document, document.baseURI);
 					const defuddled = parseForClip(document);
 					const markdown = createMarkdownContent(defuddled.content, document.URL);
 					const title = defuddled.title || document.title || 'Untitled';
@@ -213,6 +216,7 @@ declare global {
 
 				// Use parseAsync to ensure async variables like {{transcript}} are available.
 				// If it hangs (e.g. another extension has corrupted fetch), fall back to sync parse.
+				normalizeLazyLoadedImages(document, document.baseURI);
 				const defuddle = new Defuddle(document, { url: document.URL });
 				const parseTimeout = new Promise<never>((_, reject) =>
 					setTimeout(() => reject(new Error('parseAsync timeout')), 8000)
@@ -227,6 +231,7 @@ declare global {
 				const parser = new DOMParser();
 				// Parse the document's HTML
 				const doc = parser.parseFromString(document.documentElement.outerHTML, 'text/html');
+				normalizeLazyLoadedImages(doc, document.baseURI);
 
 				// Remove all script and style elements
 				doc.querySelectorAll('script, style').forEach(el => el.remove());
@@ -235,7 +240,7 @@ declare global {
 				doc.querySelectorAll('*').forEach(el => el.removeAttribute('style'));
 
 				// Convert all relative URLs to absolute
-				doc.querySelectorAll('[src], [href]').forEach(element => {
+				doc.querySelectorAll('[src], [href], [srcset]').forEach(element => {
 					['src', 'href', 'srcset'].forEach(attr => {
 						const value = element.getAttribute(attr);
 						if (!value) return;
@@ -397,6 +402,7 @@ declare global {
 	});
 
 	function extractContentBySelector(selector: string, attribute?: string, extractHtml: boolean = false): string | string[] {
+		normalizeLazyLoadedImages(document, document.baseURI);
 		return extractContentBySelectorShared(document, selector, attribute, extractHtml);
 	}
 
