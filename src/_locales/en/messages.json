@@ -1063,6 +1063,39 @@
 			}
 		}
 	},
+	"videoClipping": {
+		"message": "Video clipping"
+	},
+	"videoDownloadCommand": {
+		"message": "Include download command"
+	},
+	"videoDownloadCommandDescription": {
+		"message": "Add an external downloader command to the note. Web Clipper never runs the command or downloads video streams itself."
+	},
+	"videoDownloadCommandTemplate": {
+		"message": "Download command template"
+	},
+	"videoDownloadCommandTemplateDescription": {
+		"message": "Use variables such as {{url}}, {{videoTitle}}, {{videoAuthor}}, and {{videoPlatform}}."
+	},
+	"videoSummary": {
+		"message": "Include summary"
+	},
+	"videoSummaryDescription": {
+		"message": "Generate a lightweight summary from the video description or transcript without calling an external AI provider."
+	},
+	"videoTemplate": {
+		"message": "Use video template automatically"
+	},
+	"videoTemplateDescription": {
+		"message": "Automatically select the built-in video clipping template for Bilibili, Douyin, and YouTube pages."
+	},
+	"videoTranscript": {
+		"message": "Include captions / transcript"
+	},
+	"videoTranscriptDescription": {
+		"message": "Save platform captions or transcripts when the page extractor can access them."
+	},
 	"version": {
 		"message": "Version"
 	}

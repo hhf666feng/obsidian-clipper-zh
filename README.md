@@ -1,6 +1,6 @@
 ## 版本差异说明
 
-这是基于官方 [Obsidian Web Clipper](https://github.com/obsidianmd/obsidian-clipper) 的 fork 版本。相比官方主版本，本版本增加了对微信公众号文章懒加载图片的处理：在内容提取前，会把 `data-src`、`data-srcset` 等属性中的真实图片地址规范化到图片节点上，让 Obsidian 本地图片保存能下载原始文章图片，而不是占位图或微信运行时懒加载地址。本版本默认使用简体中文 README，并保留英文 README。
+这是基于官方 [Obsidian Web Clipper](https://github.com/obsidianmd/obsidian-clipper) 的 fork 版本。相比官方主版本，本版本面向中文内容归档做了增强：一是修复微信公众号文章懒加载图片，让 Obsidian 本地图片保存能下载原始文章图片；二是初步支持 B 站、抖音、YouTube 视频页面一键剪切，自动保存标题、作者、发布时间、封面、简介、摘要、视频链接，以及可获取到的字幕或转写。本版本默认使用简体中文 README，并保留英文 README。
 
 语言：简体中文 | [English](README.en.md)
 
@@ -13,6 +13,9 @@
 - 公众号图片因为懒加载机制，真实地址藏在 `data-src`、`data-srcset` 里，网页剪切时拿到的是 `wx_lazy`、`#imgIndex`、`tp=webp` 等运行时地址。
 - 从 `mp.weixin.qq.com` 裁剪文章后，`mmbiz.qpic.cn` 图片无法被 Obsidian 正确下载或归档。
 - 想让 Obsidian 的“本地保存图片”功能直接保存微信公众号原图，不再手动滚动页面、刷新图片、或在 Obsidian 端二次处理。
+- Obsidian Web Clipper 剪切 B 站视频、抖音视频、YouTube 视频时，只得到普通网页内容，缺少标题、作者、封面、发布时间、简介、字幕或转写。
+- 想把视频内容归档到 Obsidian：一键生成视频笔记、视频摘要、字幕转写、原始链接和可选下载命令。
+- 想保存视频资料，但不希望浏览器扩展内置视频下载器或自动执行本地命令。
 
 Obsidian Web Clipper 可帮助你在常用浏览器中高亮并裁剪网页。保存的内容会以耐久的 Markdown 文件形式存入你的 Obsidian 仓库，方便离线阅读和长期保存。
 
@@ -35,6 +38,10 @@ Obsidian Web Clipper 可帮助你在常用浏览器中高亮并裁剪网页。�
 
 Web Clipper 会在提取内容前规范化懒加载图片。对于把真实图片地址放在 `data-src`、`data-srcset` 等属性中的网页，包括微信公众号文章，图片裁剪和 Obsidian 本地图片保存会优先使用原始图片地址，而不是占位图或运行时懒加载地址。
 
+对于 B 站、抖音、YouTube 视频页，Web Clipper 会自动选中内置“视频剪切”模板，并注入 `{{videoTitle}}`、`{{videoAuthor}}`、`{{videoPublished}}`、`{{videoCover}}`、`{{videoDescription}}`、`{{videoSummary}}`、`{{videoTranscript}}`、`{{videoPlatform}}`、`{{videoDownloadCommand}}` 等变量。摘要默认基于简介或字幕前段生成，不调用外部 AI；如果你已经配置了解释器，也可以继续在模板中使用提示变量生成 AI 摘要。
+
+视频下载默认关闭。开启后，扩展只会把外部下载命令写入笔记，例如基于 `yt-dlp` 的 `yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"`。扩展不会执行该命令，不会直接下载视频流，也不会绕过平台限制。
+
 ## 贡献
 
 ### 翻译
@@ -53,7 +60,8 @@ Web Clipper 会在提取内容前规范化懒加载图片。对于把真实图�
 - [ ] 标注高亮内容
 - [ ] 模板目录
 - [ ] 跨浏览器同步设置
-- [ ] 一键剪切视频平台内容，例如 B 站、抖音、YouTube 等；自动保存标题、作者、发布时间、封面、简介、视频链接、字幕或转写等适合 Obsidian 归档的元数据
+- [x] 一键剪切视频平台内容，例如 B 站、抖音、YouTube 等；自动保存标题、作者、发布时间、封面、简介、视频链接、字幕或转写等适合 Obsidian 归档的元数据
+- [ ] 持续增强视频平台剪切：更稳定的字幕获取、移动分享链接解析、短视频页面适配、模板示例和手动验收清单
 - [x] 模板校验
 - [x] 模板逻辑（if/for）
 - [x] 本地保存图片，已在 [Obsidian 1.8.0](https://obsidian.md/changelog/2024-12-18-desktop-v1.8.0/) 中加入
@@ -119,6 +127,12 @@ npm run test:watch
 
 ```sh
 npx vitest run src/api.test.ts src/utils/lazy-images.test.ts src/utils/filters/image.test.ts
+```
+
+修改视频剪切逻辑时，请运行：
+
+```sh
+npx vitest run src/utils/video-clipping.test.ts src/api.test.ts
 ```
 
 ## 第三方库

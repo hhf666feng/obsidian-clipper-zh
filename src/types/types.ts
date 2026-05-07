@@ -70,6 +70,14 @@ export interface ReaderSettings {
 	customCss: string;
 }
 
+export interface VideoClippingSettings {
+	enableVideoTemplate: boolean;
+	includeTranscript: boolean;
+	includeSummary: boolean;
+	includeDownloadCommand: boolean;
+	downloadCommandTemplate: string;
+}
+
 export interface Settings {
 	vaults: string[];
 	showMoreActionsButton: boolean;
@@ -97,6 +105,7 @@ export interface Settings {
 	history: HistoryEntry[];
 	ratings: Rating[];
 	saveBehavior: 'addToObsidian' | 'saveFile' | 'copyToClipboard';
+	videoClipping: VideoClippingSettings;
 }
 
 export interface ModelConfig {

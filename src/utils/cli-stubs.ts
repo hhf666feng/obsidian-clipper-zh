@@ -49,6 +49,13 @@ export const generalSettings: Settings = {
 	history: [],
 	ratings: [],
 	saveBehavior: 'addToObsidian',
+	videoClipping: {
+		enableVideoTemplate: true,
+		includeTranscript: true,
+		includeSummary: true,
+		includeDownloadCommand: false,
+		downloadCommandTemplate: 'yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"',
+	},
 };
 
 export const loadSettings = async () => {};

@@ -1063,6 +1063,39 @@
 			}
 		}
 	},
+	"videoClipping": {
+		"message": "视频剪切"
+	},
+	"videoDownloadCommand": {
+		"message": "包含下载命令"
+	},
+	"videoDownloadCommandDescription": {
+		"message": "把外部下载工具命令写入笔记。Web Clipper 不会执行命令，也不会直接下载平台视频流。"
+	},
+	"videoDownloadCommandTemplate": {
+		"message": "下载命令模板"
+	},
+	"videoDownloadCommandTemplateDescription": {
+		"message": "可使用 {{url}}、{{videoTitle}}、{{videoAuthor}}、{{videoPlatform}} 等变量。"
+	},
+	"videoSummary": {
+		"message": "包含摘要"
+	},
+	"videoSummaryDescription": {
+		"message": "基于视频简介或字幕生成轻量摘要，不默认调用外部 AI 服务。"
+	},
+	"videoTemplate": {
+		"message": "自动使用视频模板"
+	},
+	"videoTemplateDescription": {
+		"message": "B 站、抖音、YouTube 页面会自动选中内置视频剪切模板。"
+	},
+	"videoTranscript": {
+		"message": "包含字幕 / 转写"
+	},
+	"videoTranscriptDescription": {
+		"message": "当页面提取器能拿到平台字幕或转写时，将其保存到笔记中。"
+	},
 	"version": {
 		"message": "版本"
 	}

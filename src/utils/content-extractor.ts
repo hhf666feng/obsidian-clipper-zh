@@ -186,6 +186,7 @@ export async function initializePageContent(
 			schemaOrgData,
 			metaTags,
 			extractedContent,
+			videoClippingSettings: generalSettings.videoClipping,
 		});
 
 		debugLog('Variables', 'Available variables:', currentVariables);

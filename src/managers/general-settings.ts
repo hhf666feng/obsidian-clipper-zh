@@ -5,7 +5,7 @@ import { initializeToggles, updateToggleState, initializeSettingToggle } from '.
 import { generalSettings, loadSettings, saveSettings, setLocalStorage, getLocalStorage } from '../utils/storage-utils';
 import { detectBrowser } from '../utils/browser-detection';
 import { createElementWithClass, createElementWithHTML } from '../utils/dom-utils';
-import { createDefaultTemplate, getTemplates, saveTemplateSettings } from '../managers/template-manager';
+import { createDefaultTemplate, getTemplates, loadTemplates, saveTemplateSettings } from '../managers/template-manager';
 import { updateTemplateList, showTemplateEditor } from '../managers/template-ui';
 import { exportAllSettings, importAllSettings } from '../utils/import-export';
 import { Settings, Template } from '../types/types';
@@ -227,6 +227,7 @@ export function initializeGeneralSettings(): void {
 		initializeHighlighterSettings();
 		initializeExportHighlightsButton();
 		initializeSaveBehaviorDropdown();
+		initializeVideoClippingSettings();
 		await initializeUsageChart();
 
 		// Initialize feedback modal close button
@@ -256,6 +257,11 @@ function saveSettingsFromForm(): void {
 	const highlighterToggle = document.getElementById('highlighter-toggle') as HTMLInputElement;
 	const alwaysShowHighlightsToggle = document.getElementById('highlighter-visibility') as HTMLInputElement;
 	const highlightBehaviorSelect = document.getElementById('highlighter-behavior') as HTMLSelectElement;
+	const videoTemplateToggle = document.getElementById('video-template-toggle') as HTMLInputElement;
+	const videoTranscriptToggle = document.getElementById('video-transcript-toggle') as HTMLInputElement;
+	const videoSummaryToggle = document.getElementById('video-summary-toggle') as HTMLInputElement;
+	const videoDownloadCommandToggle = document.getElementById('video-download-command-toggle') as HTMLInputElement;
+	const videoDownloadCommandTemplate = document.getElementById('video-download-command-template') as HTMLInputElement;
 
 	const updatedSettings = {
 		...generalSettings, // Keep existing settings
@@ -266,7 +272,14 @@ function saveSettingsFromForm(): void {
 		silentOpen: silentOpenToggle?.checked ?? generalSettings.silentOpen,
 		highlighterEnabled: highlighterToggle?.checked ?? generalSettings.highlighterEnabled,
 		alwaysShowHighlights: alwaysShowHighlightsToggle?.checked ?? generalSettings.alwaysShowHighlights,
-		highlightBehavior: highlightBehaviorSelect?.value ?? generalSettings.highlightBehavior
+		highlightBehavior: highlightBehaviorSelect?.value ?? generalSettings.highlightBehavior,
+		videoClipping: {
+			enableVideoTemplate: videoTemplateToggle?.checked ?? generalSettings.videoClipping.enableVideoTemplate,
+			includeTranscript: videoTranscriptToggle?.checked ?? generalSettings.videoClipping.includeTranscript,
+			includeSummary: videoSummaryToggle?.checked ?? generalSettings.videoClipping.includeSummary,
+			includeDownloadCommand: videoDownloadCommandToggle?.checked ?? generalSettings.videoClipping.includeDownloadCommand,
+			downloadCommandTemplate: videoDownloadCommandTemplate?.value ?? generalSettings.videoClipping.downloadCommandTemplate,
+		},
 	};
 
 	saveSettings(updatedSettings);
@@ -426,6 +439,47 @@ function initializeHighlighterSettings(): void {
 		highlightBehaviorSelect.addEventListener('change', () => {
 			saveSettings({ ...generalSettings, highlightBehavior: highlightBehaviorSelect.value });
 		});
+	}
+}
+
+function saveVideoClippingSettings(settings: Partial<Settings['videoClipping']>, refreshTemplates = false): void {
+	const nextVideoClipping = {
+		...generalSettings.videoClipping,
+		...settings,
+	};
+
+	saveSettings({ ...generalSettings, videoClipping: nextVideoClipping }).then(async () => {
+		if (!refreshTemplates) return;
+		const loadedTemplates = await loadTemplates();
+		updateTemplateList(loadedTemplates);
+	}).catch(error => {
+		console.error('Failed to save video clipping settings:', error);
+	});
+}
+
+function initializeVideoClippingSettings(): void {
+	initializeSettingToggle('video-template-toggle', generalSettings.videoClipping.enableVideoTemplate, (checked) => {
+		saveVideoClippingSettings({ enableVideoTemplate: checked }, true);
+	});
+
+	initializeSettingToggle('video-transcript-toggle', generalSettings.videoClipping.includeTranscript, (checked) => {
+		saveVideoClippingSettings({ includeTranscript: checked });
+	});
+
+	initializeSettingToggle('video-summary-toggle', generalSettings.videoClipping.includeSummary, (checked) => {
+		saveVideoClippingSettings({ includeSummary: checked });
+	});
+
+	initializeSettingToggle('video-download-command-toggle', generalSettings.videoClipping.includeDownloadCommand, (checked) => {
+		saveVideoClippingSettings({ includeDownloadCommand: checked });
+	});
+
+	const commandTemplateInput = document.getElementById('video-download-command-template') as HTMLInputElement;
+	if (commandTemplateInput) {
+		commandTemplateInput.value = generalSettings.videoClipping.downloadCommandTemplate;
+		commandTemplateInput.addEventListener('input', debounce(() => {
+			saveVideoClippingSettings({ downloadCommandTemplate: commandTemplateInput.value });
+		}, 500));
 	}
 }
 

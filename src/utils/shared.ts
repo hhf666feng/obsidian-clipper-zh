@@ -4,8 +4,9 @@
 // via parameters.
 
 import { sanitizeFileName, getDomain, escapeDoubleQuotes } from './string-utils';
-import { Property } from '../types/types';
+import { Property, VideoClippingSettings } from '../types/types';
 import dayjs from 'dayjs';
+import { DEFAULT_VIDEO_CLIPPING_SETTINGS, buildVideoVariables, extractVideoClipData } from './video-clipping';
 
 // ---------------------------------------------------------------------------
 // Variable building
@@ -31,6 +32,7 @@ export interface BuildVariablesParams {
 	schemaOrgData?: any;
 	metaTags?: { name?: string | null; property?: string | null; content: string | null }[];
 	extractedContent?: Record<string, string>;
+	videoClippingSettings?: Partial<VideoClippingSettings>;
 }
 
 /**
@@ -71,6 +73,23 @@ export function buildVariables(params: BuildVariablesParams): Record<string, str
 			variables[`{{${key}}}`] = value;
 		}
 	}
+
+	const video = extractVideoClipData({
+		url: currentUrl,
+		title: params.title,
+		author: params.author,
+		description: params.description,
+		image: params.image,
+		published: params.published,
+		schemaOrgData: params.schemaOrgData,
+		metaTags: params.metaTags,
+		extractedContent: params.extractedContent,
+		fullHtml: params.fullHtml,
+	});
+	Object.assign(variables, buildVideoVariables(video, {
+		...DEFAULT_VIDEO_CLIPPING_SETTINGS,
+		...params.videoClippingSettings,
+	}));
 
 	// Add meta tags
 	if (params.metaTags) {

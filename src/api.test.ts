@@ -96,4 +96,42 @@ describe('clip', () => {
 		expect(result.content).not.toContain('wx_lazy=1');
 		expect(result.content).not.toContain('#imgIndex=');
 	});
+
+	test('renders video clipping variables through the API template path', async () => {
+		const { clip } = await import('./api');
+		const { createVideoClipTemplate } = await import('./utils/video-clipping');
+
+		const result = await clip({
+			html: `
+				<html>
+					<head>
+						<title>如何构建一个 CLI 工具</title>
+						<script>
+							window.__INITIAL_STATE__ = {
+								videoData: {
+									title: '如何构建一个 CLI 工具',
+									desc: '这是一段面向开发者的视频简介。',
+									bvid: 'BV1abc123',
+									pubdate: 1717200000,
+									pic: '//i0.hdslb.com/bfs/archive/cover.jpg',
+									owner: { name: '技术频道' }
+								}
+							};
+						</script>
+					</head>
+					<body><main>Video page shell</main></body>
+				</html>
+			`,
+			url: 'https://www.bilibili.com/video/BV1abc123',
+			template: createVideoClipTemplate(),
+			documentParser,
+		});
+
+		expect(result.noteName).toBe('技术频道 - 如何构建一个 CLI 工具');
+		expect(result.frontmatter).toContain('platform: "bilibili"');
+		expect(result.frontmatter).toContain('cover: "https://i0.hdslb.com/bfs/archive/cover.jpg"');
+		expect(result.content).toContain('![如何构建一个 CLI 工具](https://i0.hdslb.com/bfs/archive/cover.jpg)');
+		expect(result.content).toContain('这是一段面向开发者的视频简介。');
+		expect(result.content).not.toContain('## 下载命令');
+	});
 });

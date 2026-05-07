@@ -4,6 +4,7 @@ import browser from '../utils/browser-polyfill';
 import { generalSettings } from '../utils/storage-utils';
 import { addPropertyType } from './property-types-manager';
 import { getMessage } from '../utils/i18n';
+import { createVideoClipTemplate } from '../utils/video-clipping';
 
 export let templates: Template[] = [];
 export let editingTemplateIndex = -1;
@@ -55,6 +56,10 @@ export async function loadTemplates(): Promise<Template[]> {
 			await saveTemplateSettings();
 		}
 
+		if (ensureVideoClipTemplate()) {
+			await saveTemplateSettings();
+		}
+
 		// After loading templates, update global property types
 		await updateGlobalPropertyTypes(templates);
 
@@ -63,9 +68,29 @@ export async function loadTemplates(): Promise<Template[]> {
 		console.error('Error loading templates:', error);
 		const defaultTemplate = createDefaultTemplate();
 		templates = [defaultTemplate];
+		ensureVideoClipTemplate();
 		await saveTemplateSettings();
 		return templates;
 	}
+}
+
+function ensureVideoClipTemplate(): boolean {
+	const videoTemplate = createVideoClipTemplate();
+	if (!generalSettings.videoClipping.enableVideoTemplate) {
+		videoTemplate.triggers = [];
+	}
+
+	const existing = templates.find(template => template.id === videoTemplate.id);
+	if (existing) {
+		const nextTriggers = videoTemplate.triggers;
+		if (JSON.stringify(existing.triggers || []) !== JSON.stringify(nextTriggers)) {
+			existing.triggers = nextTriggers;
+			return true;
+		}
+		return false;
+	}
+	templates.splice(Math.min(1, templates.length), 0, videoTemplate);
+	return true;
 }
 
 export async function saveTemplateSettings(): Promise<string[]> {
