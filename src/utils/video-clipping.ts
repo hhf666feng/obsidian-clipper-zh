@@ -111,6 +111,25 @@ function normalizeUrl(value: string, baseUrl: string): string {
 	}
 }
 
+function normalizeBilibiliImageUrl(value: string, baseUrl: string): string {
+	const normalized = normalizeUrl(value, baseUrl);
+	if (!normalized) return '';
+	try {
+		const url = new URL(normalized);
+		if (!url.hostname.endsWith('hdslb.com')) {
+			return normalized;
+		}
+		url.protocol = 'https:';
+		const styleIndex = url.pathname.indexOf('@');
+		if (styleIndex !== -1) {
+			url.pathname = url.pathname.slice(0, styleIndex);
+		}
+		return url.href;
+	} catch {
+		return normalized;
+	}
+}
+
 function normalizeDate(value: any): string {
 	if (value == null || value === '') return '';
 	if (typeof value === 'number') {
@@ -196,6 +215,11 @@ function extractJsonAssignment(fullHtml: string, variableName: string): any {
 		if (depth === 0) {
 			try {
 				const objectLiteral = fullHtml.slice(objectStart, i + 1);
+				try {
+					return JSON.parse(objectLiteral);
+				} catch {
+					// Fall back for older fixtures and sites that still use JS object literals.
+				}
 				const json = objectLiteral
 					.replace(/([{,]\s*)([A-Za-z_$][\w$]*)(\s*:)/g, '$1"$2"$3')
 					.replace(/'/g, '"')
@@ -233,7 +257,7 @@ function extractBilibiliVideo(input: VideoClipExtractionInput): Partial<VideoCli
 		title: firstValue(videoData.title),
 		author: firstValue(videoData.owner?.name || videoData.author),
 		published: normalizeDate(videoData.pubdate || videoData.ctime),
-		cover: normalizeUrl(firstValue(videoData.pic || videoData.cover), input.url),
+		cover: normalizeBilibiliImageUrl(firstValue(videoData.pic || videoData.cover), input.url),
 		description: firstValue(videoData.desc || videoData.description),
 	};
 }
