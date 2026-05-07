@@ -4,6 +4,16 @@ This fork differs from the official [Obsidian Web Clipper](https://github.com/ob
 
 Languages: [Simplified Chinese](README.md) | English
 
+## Problems this fork solves
+
+This fork is intended for users searching for issues like these:
+
+- Obsidian Web Clipper does not save images locally when clipping WeChat official account articles.
+- Images from WeChat articles become placeholders, blank images, duplicate images, or incorrect Markdown image URLs.
+- WeChat lazy-loading keeps the original image URLs in `data-src` or `data-srcset`, while clipping captures runtime URLs with `wx_lazy`, `#imgIndex`, or `tp=webp`.
+- Articles clipped from `mp.weixin.qq.com` include `mmbiz.qpic.cn` images that Obsidian cannot reliably download or archive.
+- You want Obsidian's local image saving to capture the original WeChat article images without manually scrolling, refreshing images, or running a second pass inside Obsidian.
+
 Obsidian Web Clipper helps you highlight and capture the web in your favorite browser. Anything you save is stored as durable Markdown files that you can read offline, and preserve for the long term.
 
 - **[Download Web Clipper](https://obsidian.md/clipper)**

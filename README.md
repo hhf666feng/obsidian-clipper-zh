@@ -4,6 +4,16 @@
 
 语言：简体中文 | [English](README.en.md)
 
+## 解决的问题
+
+如果你在搜索下面这些问题，这个 fork 主要就是为它们准备的：
+
+- Obsidian Web Clipper 裁剪微信公众号文章时，图片没有保存到本地。
+- 微信公众号文章里的图片变成占位图、空图、重复图片，或 Markdown 里只剩错误的图片地址。
+- 公众号图片因为懒加载机制，真实地址藏在 `data-src`、`data-srcset` 里，网页剪切时拿到的是 `wx_lazy`、`#imgIndex`、`tp=webp` 等运行时地址。
+- 从 `mp.weixin.qq.com` 裁剪文章后，`mmbiz.qpic.cn` 图片无法被 Obsidian 正确下载或归档。
+- 想让 Obsidian 的“本地保存图片”功能直接保存微信公众号原图，不再手动滚动页面、刷新图片、或在 Obsidian 端二次处理。
+
 Obsidian Web Clipper 可帮助你在常用浏览器中高亮并裁剪网页。保存的内容会以耐久的 Markdown 文件形式存入你的 Obsidian 仓库，方便离线阅读和长期保存。
 
 - **[下载 Web Clipper](https://obsidian.md/clipper)**
