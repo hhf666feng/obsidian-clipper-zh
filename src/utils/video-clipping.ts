@@ -299,8 +299,8 @@ function extractBilibiliVideo(input: VideoClipExtractionInput): Partial<VideoCli
 			|| schemaData.author
 			|| input.author,
 		published: normalizeDate(videoData.pubdate || videoData.ctime)
-			|| schemaData.published
-			|| normalizeDate(metaContent(input.metaTags, 'uploadDate') || metaContent(input.metaTags, 'datePublished')),
+			|| normalizeDate(metaContent(input.metaTags, 'uploadDate') || metaContent(input.metaTags, 'datePublished'))
+			|| schemaData.published,
 		cover: normalizeBilibiliImageUrl(firstValue(videoData.pic || videoData.cover)
 			|| schemaData.cover
 			|| metaContent(input.metaTags, 'og:image')

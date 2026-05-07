@@ -123,7 +123,7 @@ describe('video clipping', () => {
 				name: '%E5%85%A8%E7%BD%91%E6%9C%80%E5%85%A8%EF%BC%8160%E5%88%86%E9%92%9F%E5%85%A8%E9%9D%A2%E6%8E%8C%E6%8F%A1Claude%20Code%EF%BD%9E%E3%80%90%E9%99%84%E5%AE%8C%E6%95%B4%E6%96%87%E6%A1%A3%E3%80%91',
 				description: 'Claude%20Code%E4%BF%9D%E5%A7%86%E7%BA%A7%E6%95%99%E5%AD%A6%E3%80%90%E6%94%B6%E8%97%8F%E8%B5%B7%E6%9D%A5%E4%B8%8D%E4%BC%9A%E9%94%99%EF%BC%81%E3%80%91%0A%E4%BB%8E%E4%B8%8A%E6%89%8B%E5%AE%89%E8%A3%85%EF%BC%8C%E5%88%B0%E9%AB%98%E7%BA%A7%E7%94%A8%E6%B3%95%EF%BC%8C%E8%BF%99%E6%9C%9F%E4%B8%80%E6%AC%A1%E8%AE%B2%E5%85%A8%EF%BD%9E',
 				thumbnailUrl: ['http://i2.hdslb.com/bfs/archive/cover.jpg@189w_107h.jpg'],
-				uploadDate: '2026-05-05 22:08:25',
+				uploadDate: '2026-05-07T06:22:55.316Z',
 			},
 			metaTags: [
 				{ name: 'author', content: '秋芝2046' },
