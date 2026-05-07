@@ -709,6 +709,7 @@ async function refreshFields(tabId: number, { checkTemplateTriggers = true, rebu
 				currentUrl,
 				extractedData.schemaOrgData,
 				extractedData.fullHtml,
+				extractedData.rawHtml,
 				extractedData.highlights || [],
 				extractedData.title,
 				extractedData.author,

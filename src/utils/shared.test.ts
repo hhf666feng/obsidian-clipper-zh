@@ -120,6 +120,43 @@ describe('buildVariables', () => {
 		expect(vars['{{highlights}}']).toBe('[{"text":"highlight"}]');
 	});
 
+	test('uses raw HTML for video metadata while keeping fullHtml sanitized for templates', () => {
+		const encodedTitle = encodeURIComponent('全网最全！60分钟全面掌握Claude Code～【附完整文档】');
+		const rawHtml = `
+			<html>
+				<head>
+					<script>
+						window.__INITIAL_STATE__={
+							"videoData":{
+								"title":"全网最全！60分钟全面掌握Claude Code～【附完整文档】",
+								"desc":"Claude Code 保姆级教学",
+								"pubdate":1777990105,
+								"pic":"//i2.hdslb.com/bfs/archive/cover.jpg@100w_100h_1c.png",
+								"owner":{"name":"秋芝2046"}
+							}
+						};
+					</script>
+				</head>
+			</html>
+		`;
+		const vars = buildVariables(makeParams({
+			url: 'https://www.bilibili.com/video/BV1NvRyBzEhq/',
+			title: encodedTitle,
+			description: '视频播放量 251025、相关推荐污染内容',
+			image: '//i2.hdslb.com/bfs/archive/cover.jpg@100w_100h_1c.png',
+			published: '',
+			fullHtml: '<html><head></head><body>cleaned page</body></html>',
+			rawHtml,
+		}));
+
+		expect(vars['{{fullHtml}}']).toBe('<html><head></head><body>cleaned page</body></html>');
+		expect(vars['{{videoTitle}}']).toBe('全网最全！60分钟全面掌握Claude Code～【附完整文档】');
+		expect(vars['{{videoAuthor}}']).toBe('秋芝2046');
+		expect(vars['{{videoDescription}}']).toBe('Claude Code 保姆级教学');
+		expect(vars['{{videoCover}}']).toBe('https://i2.hdslb.com/bfs/archive/cover.jpg');
+		expect(vars['{{videoSummary}}']).not.toContain('相关推荐');
+	});
+
 	test('produces date and time in ISO-like format', () => {
 		const vars = buildVariables(makeParams());
 		// Both should be identical timestamps
