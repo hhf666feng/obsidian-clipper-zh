@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-clipper",
-	"version": "1.6.2-zh.3",
-	"description": "Official web clipper for Obsidian.",
+	"version": "1.6.2-zh.4",
+	"description": "面向中文内容归档增强的 Obsidian 网页剪藏器。",
 	"bin": {
 		"obsidian-clipper": "./dist/cli.cjs"
 	},

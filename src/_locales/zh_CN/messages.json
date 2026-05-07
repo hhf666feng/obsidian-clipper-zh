@@ -283,7 +283,7 @@
 		}
 	},
 	"extensionDescription": {
-		"message": "以私密且持久的格式保存网页内容，可离线访问。Obsidian 官方浏览器扩展。"
+		"message": "保存和高亮网页内容，修复微信公众号图片保存，并支持 B 站、抖音、YouTube 视频一键剪切。内容以 Markdown 存入 Obsidian，便于离线阅读和长期归档。"
 	},
 	"extensionName": {
 		"message": "Obsidian 网页剪藏器"

@@ -3,9 +3,9 @@
 	"default_locale": "en",
 	"name": "Obsidian Web Clipper",
 	"homepage_url": "https://obsidian.md/",
-	"version": "1.6.2.3",
-	"version_name": "1.6.2-zh.3",
-	"description": "Save and highlight web pages in a private and durable format that you can access offline. The official extension for Obsidian.",
+	"version": "1.6.2.4",
+	"version_name": "1.6.2-zh.4",
+	"description": "保存和高亮网页内容，修复微信公众号图片保存，并支持 B 站、抖音、YouTube 视频一键剪切。内容以 Markdown 存入 Obsidian，便于离线阅读和长期归档。",
 	"permissions": [
 		"activeTab",
 		"clipboardWrite",
