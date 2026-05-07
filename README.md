@@ -1,3 +1,7 @@
+## Fork-specific changes
+
+This fork differs from the official [Obsidian Web Clipper](https://github.com/obsidianmd/obsidian-clipper) main version by adding support for WeChat official account articles that lazy-load images through `data-src` and `data-srcset`. The clipping pipeline normalizes those image URLs before extraction so Obsidian's local image saving can download the original article images instead of placeholders or WeChat runtime lazy-load URLs. This fork also includes a Simplified Chinese README.
+
 Languages: [English](README.md) | [Simplified Chinese](README.zh-CN.md)
 
 Obsidian Web Clipper helps you highlight and capture the web in your favorite browser. Anything you save is stored as durable Markdown files that you can read offline, and preserve for the long term.
