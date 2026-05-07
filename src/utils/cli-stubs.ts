@@ -55,6 +55,9 @@ export const generalSettings: Settings = {
 		includeSummary: true,
 		includeDownloadCommand: true,
 		downloadCommandTemplate: 'yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"',
+		autoDownload: true,
+		autoDownloadDirectory: '~/Downloads/Obsidian Web Clipper Videos',
+		autoDownloadExecutable: 'yt-dlp',
 	},
 };
 

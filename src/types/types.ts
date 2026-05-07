@@ -76,6 +76,9 @@ export interface VideoClippingSettings {
 	includeSummary: boolean;
 	includeDownloadCommand: boolean;
 	downloadCommandTemplate: string;
+	autoDownload: boolean;
+	autoDownloadDirectory: string;
+	autoDownloadExecutable: string;
 }
 
 export interface Settings {

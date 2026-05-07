@@ -262,6 +262,9 @@ function saveSettingsFromForm(): void {
 	const videoSummaryToggle = document.getElementById('video-summary-toggle') as HTMLInputElement;
 	const videoDownloadCommandToggle = document.getElementById('video-download-command-toggle') as HTMLInputElement;
 	const videoDownloadCommandTemplate = document.getElementById('video-download-command-template') as HTMLInputElement;
+	const videoAutoDownloadToggle = document.getElementById('video-auto-download-toggle') as HTMLInputElement;
+	const videoAutoDownloadDirectory = document.getElementById('video-auto-download-directory') as HTMLInputElement;
+	const videoAutoDownloadExecutable = document.getElementById('video-auto-download-executable') as HTMLInputElement;
 
 	const updatedSettings = {
 		...generalSettings, // Keep existing settings
@@ -279,6 +282,9 @@ function saveSettingsFromForm(): void {
 			includeSummary: videoSummaryToggle?.checked ?? generalSettings.videoClipping.includeSummary,
 			includeDownloadCommand: videoDownloadCommandToggle?.checked ?? generalSettings.videoClipping.includeDownloadCommand,
 			downloadCommandTemplate: videoDownloadCommandTemplate?.value ?? generalSettings.videoClipping.downloadCommandTemplate,
+			autoDownload: videoAutoDownloadToggle?.checked ?? generalSettings.videoClipping.autoDownload,
+			autoDownloadDirectory: videoAutoDownloadDirectory?.value ?? generalSettings.videoClipping.autoDownloadDirectory,
+			autoDownloadExecutable: videoAutoDownloadExecutable?.value ?? generalSettings.videoClipping.autoDownloadExecutable,
 		},
 	};
 
@@ -474,11 +480,31 @@ function initializeVideoClippingSettings(): void {
 		saveVideoClippingSettings({ includeDownloadCommand: checked });
 	});
 
+	initializeSettingToggle('video-auto-download-toggle', generalSettings.videoClipping.autoDownload, (checked) => {
+		saveVideoClippingSettings({ autoDownload: checked });
+	});
+
 	const commandTemplateInput = document.getElementById('video-download-command-template') as HTMLInputElement;
 	if (commandTemplateInput) {
 		commandTemplateInput.value = generalSettings.videoClipping.downloadCommandTemplate;
 		commandTemplateInput.addEventListener('input', debounce(() => {
 			saveVideoClippingSettings({ downloadCommandTemplate: commandTemplateInput.value });
+		}, 500));
+	}
+
+	const autoDownloadDirectoryInput = document.getElementById('video-auto-download-directory') as HTMLInputElement;
+	if (autoDownloadDirectoryInput) {
+		autoDownloadDirectoryInput.value = generalSettings.videoClipping.autoDownloadDirectory;
+		autoDownloadDirectoryInput.addEventListener('input', debounce(() => {
+			saveVideoClippingSettings({ autoDownloadDirectory: autoDownloadDirectoryInput.value });
+		}, 500));
+	}
+
+	const autoDownloadExecutableInput = document.getElementById('video-auto-download-executable') as HTMLInputElement;
+	if (autoDownloadExecutableInput) {
+		autoDownloadExecutableInput.value = generalSettings.videoClipping.autoDownloadExecutable;
+		autoDownloadExecutableInput.addEventListener('input', debounce(() => {
+			saveVideoClippingSettings({ autoDownloadExecutable: autoDownloadExecutableInput.value });
 		}, 500));
 	}
 }

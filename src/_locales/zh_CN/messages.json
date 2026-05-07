@@ -1070,13 +1070,31 @@
 		"message": "包含下载命令"
 	},
 	"videoDownloadCommandDescription": {
-		"message": "默认把外部下载工具命令写入视频笔记。你可以复制命令到终端执行；Web Clipper 不会自动执行本地命令或内置下载器。"
+		"message": "把外部下载工具命令写入视频笔记，便于审计或手动重跑；自动下载由本机助手单独控制。"
 	},
 	"videoDownloadCommandTemplate": {
 		"message": "下载命令模板"
 	},
 	"videoDownloadCommandTemplateDescription": {
 		"message": "可使用 {{url}}、{{videoTitle}}、{{videoAuthor}}、{{videoPlatform}} 等变量。"
+	},
+	"videoAutoDownload": {
+		"message": "自动下载视频"
+	},
+	"videoAutoDownloadDescription": {
+		"message": "剪切视频后，通过已安装的本机助手在后台启动 yt-dlp 下载。"
+	},
+	"videoAutoDownloadDirectory": {
+		"message": "视频下载目录"
+	},
+	"videoAutoDownloadDirectoryDescription": {
+		"message": "供本机助手使用。以 ~/ 开头的路径会解析到你的用户目录。"
+	},
+	"videoAutoDownloadExecutable": {
+		"message": "yt-dlp 可执行文件"
+	},
+	"videoAutoDownloadExecutableDescription": {
+		"message": "如果 yt-dlp 已在 PATH 中，可保持默认；也可以填写完整路径。"
 	},
 	"videoSummary": {
 		"message": "包含摘要"
