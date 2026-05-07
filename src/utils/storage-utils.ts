@@ -113,7 +113,7 @@ interface StorageData {
 	migrationVersion?: number;
 }
 
-const CURRENT_MIGRATION_VERSION = 2;
+const CURRENT_MIGRATION_VERSION = 3;
 
 export async function loadSettings(): Promise<Settings> {
 	const data = await browser.storage.sync.get(null) as StorageData;
@@ -226,6 +226,11 @@ export async function loadSettings(): Promise<Settings> {
 				? true
 				: data.video_clipping_settings?.includeDownloadCommand ?? defaultSettings.videoClipping.includeDownloadCommand,
 			downloadCommandTemplate: data.video_clipping_settings?.downloadCommandTemplate || defaultSettings.videoClipping.downloadCommandTemplate,
+			autoDownload: previousMigrationVersion < 3
+				? true
+				: data.video_clipping_settings?.autoDownload ?? defaultSettings.videoClipping.autoDownload,
+			autoDownloadDirectory: data.video_clipping_settings?.autoDownloadDirectory || defaultSettings.videoClipping.autoDownloadDirectory,
+			autoDownloadExecutable: data.video_clipping_settings?.autoDownloadExecutable || defaultSettings.videoClipping.autoDownloadExecutable,
 		},
 		stats: data.stats || defaultSettings.stats,
 		history: data.history || defaultSettings.history,

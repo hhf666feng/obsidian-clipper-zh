@@ -35,6 +35,8 @@ export interface VideoProvider {
 }
 
 export const DEFAULT_VIDEO_DOWNLOAD_COMMAND_TEMPLATE = 'yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"';
+export const DEFAULT_VIDEO_AUTO_DOWNLOAD_DIRECTORY = '~/Downloads/Obsidian Web Clipper Videos';
+export const DEFAULT_VIDEO_AUTO_DOWNLOAD_EXECUTABLE = 'yt-dlp';
 
 export const DEFAULT_VIDEO_CLIPPING_SETTINGS: VideoClippingSettings = {
 	enableVideoTemplate: true,
@@ -42,6 +44,9 @@ export const DEFAULT_VIDEO_CLIPPING_SETTINGS: VideoClippingSettings = {
 	includeSummary: true,
 	includeDownloadCommand: true,
 	downloadCommandTemplate: DEFAULT_VIDEO_DOWNLOAD_COMMAND_TEMPLATE,
+	autoDownload: true,
+	autoDownloadDirectory: DEFAULT_VIDEO_AUTO_DOWNLOAD_DIRECTORY,
+	autoDownloadExecutable: DEFAULT_VIDEO_AUTO_DOWNLOAD_EXECUTABLE,
 };
 
 function normalizedHost(url: URL): string {

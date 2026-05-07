@@ -1070,13 +1070,31 @@
 		"message": "Include download command"
 	},
 	"videoDownloadCommandDescription": {
-		"message": "Add an external downloader command to video notes by default. Copy it into a terminal to run it; Web Clipper does not execute local commands or bundle a downloader."
+		"message": "Add an external downloader command to video notes for auditing or manual retries; automatic download is controlled by the native helper."
 	},
 	"videoDownloadCommandTemplate": {
 		"message": "Download command template"
 	},
 	"videoDownloadCommandTemplateDescription": {
 		"message": "Use variables such as {{url}}, {{videoTitle}}, {{videoAuthor}}, and {{videoPlatform}}."
+	},
+	"videoAutoDownload": {
+		"message": "Auto download video"
+	},
+	"videoAutoDownloadDescription": {
+		"message": "After clipping a video, ask the installed native helper to start yt-dlp in the background."
+	},
+	"videoAutoDownloadDirectory": {
+		"message": "Video download folder"
+	},
+	"videoAutoDownloadDirectoryDescription": {
+		"message": "Used by the native helper. Paths starting with ~/ are resolved from your home folder."
+	},
+	"videoAutoDownloadExecutable": {
+		"message": "yt-dlp executable"
+	},
+	"videoAutoDownloadExecutableDescription": {
+		"message": "Use yt-dlp if it is on PATH, or enter the full path to the executable."
 	},
 	"videoSummary": {
 		"message": "Include summary"
