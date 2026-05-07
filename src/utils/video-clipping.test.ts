@@ -62,6 +62,50 @@ describe('video clipping', () => {
 		expect(data?.published).toContain('2024-06-01');
 	});
 
+	test('extracts Bilibili data from real JSON initial state without falling back to page metadata', () => {
+		const fullHtml = `
+			<html>
+				<head>
+					<script>
+						window.__INITIAL_STATE__={
+							"videoData":{
+								"title":"全网最全！60分钟全面掌握Claude Code～【附完整文档】",
+								"desc":"Claude Code's 保姆级教学【收藏起来不会错！】\\n从上手安装，到高级用法，这期一次讲全～",
+								"bvid":"BV1NvRyBzEhq",
+								"pubdate":1777990105,
+								"pic":"//i2.hdslb.com/bfs/archive/4ef379f4341e05c09ba920b4a4ccc6d6cf54f076.jpg@100w_100h_1c.png",
+								"owner":{"name":"秋芝2046"}
+							}
+						};
+					</script>
+				</head>
+			</html>
+		`;
+
+		const data = extractVideoClipData({
+			url: 'https://www.bilibili.com/video/BV1NvRyBzEhq/?spm_id_from=333.1007.tianma.1-1-1.click',
+			title: '全网最全！60分钟全面掌握Claude Code～【附完整文档】_哔哩哔哩_bilibili',
+			author: '',
+			description: '视频播放量 251025、弹幕量 1552、相关推荐污染内容',
+			image: '//i2.hdslb.com/bfs/archive/4ef379f4341e05c09ba920b4a4ccc6d6cf54f076.jpg@100w_100h_1c.png',
+			published: '',
+			schemaOrgData: null,
+			metaTags: [],
+			extractedContent: {},
+			fullHtml,
+		});
+
+		expect(data).toMatchObject({
+			platform: 'bilibili',
+			title: '全网最全！60分钟全面掌握Claude Code～【附完整文档】',
+			author: '秋芝2046',
+			description: "Claude Code's 保姆级教学【收藏起来不会错！】\n从上手安装，到高级用法，这期一次讲全～",
+			cover: 'https://i2.hdslb.com/bfs/archive/4ef379f4341e05c09ba920b4a4ccc6d6cf54f076.jpg',
+		});
+		expect(data?.published).toBe('2026-05-05T14:08:25.000Z');
+		expect(data?.summary).not.toContain('相关推荐');
+	});
+
 	test('extracts Douyin video data from universal render data', () => {
 		const fullHtml = `
 			<html>
