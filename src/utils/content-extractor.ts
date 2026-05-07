@@ -63,7 +63,7 @@ interface ContentResponse {
 	site: string;
 	wordCount: number;
 	language: string;
-	metaTags: { name?: string | null; property?: string | null; content: string | null }[];
+	metaTags: { name?: string | null; property?: string | null; itemprop?: string | null; content: string | null }[];
 }
 
 async function sendExtractRequest(tabId: number): Promise<ContentResponse> {
@@ -144,7 +144,7 @@ export async function initializePageContent(
 	site: string,
 	wordCount: number,
 	language: string,
-	metaTags: { name?: string | null; property?: string | null; content: string | null }[]
+	metaTags: { name?: string | null; property?: string | null; itemprop?: string | null; content: string | null }[]
 ) {
 	try {
 		currentUrl = currentUrl.replace(/#:~:text=[^&]+(&|$)/, '');
