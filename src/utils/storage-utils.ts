@@ -2,6 +2,7 @@ import browser from './browser-polyfill';
 import { Settings, ModelConfig, PropertyType, HistoryEntry, Provider, Rating } from '../types/types';
 import { debugLog } from './debug';
 import { copyToClipboard } from 'core/popup';
+import { DEFAULT_VIDEO_CLIPPING_SETTINGS } from './video-clipping';
 
 export type { Settings, ModelConfig, PropertyType, HistoryEntry, Provider, Rating };
 
@@ -47,7 +48,8 @@ export let generalSettings: Settings = {
 	},
 	history: [],
 	ratings: [],
-	saveBehavior: 'addToObsidian'
+	saveBehavior: 'addToObsidian',
+	videoClipping: { ...DEFAULT_VIDEO_CLIPPING_SETTINGS }
 };
 
 export function setLocalStorage(key: string, value: any): Promise<void> {
@@ -90,6 +92,7 @@ interface StorageData {
 		highlightActiveLine?: boolean;
 		customCss?: string;
 	};
+	video_clipping_settings?: Partial<Settings['videoClipping']>;
 	interpreter_settings?: {
 		interpreterModel?: string;
 		models?: ModelConfig[];
@@ -134,6 +137,7 @@ export async function loadSettings(): Promise<Settings> {
 		defaultPromptContext: '',
 		propertyTypes: [],
 		saveBehavior: 'addToObsidian',
+		videoClipping: { ...DEFAULT_VIDEO_CLIPPING_SETTINGS },
 		readerSettings: {
 			fontSize: 16,
 			lineHeight: 1.6,
@@ -213,6 +217,13 @@ export async function loadSettings(): Promise<Settings> {
 			highlightActiveLine: data.reader_settings?.highlightActiveLine ?? defaultSettings.readerSettings.highlightActiveLine,
 			customCss: data.reader_settings?.customCss ?? defaultSettings.readerSettings.customCss
 		},
+		videoClipping: {
+			enableVideoTemplate: data.video_clipping_settings?.enableVideoTemplate ?? defaultSettings.videoClipping.enableVideoTemplate,
+			includeTranscript: data.video_clipping_settings?.includeTranscript ?? defaultSettings.videoClipping.includeTranscript,
+			includeSummary: data.video_clipping_settings?.includeSummary ?? defaultSettings.videoClipping.includeSummary,
+			includeDownloadCommand: data.video_clipping_settings?.includeDownloadCommand ?? defaultSettings.videoClipping.includeDownloadCommand,
+			downloadCommandTemplate: data.video_clipping_settings?.downloadCommandTemplate || defaultSettings.videoClipping.downloadCommandTemplate,
+		},
 		stats: data.stats || defaultSettings.stats,
 		history: data.history || defaultSettings.history,
 		ratings: data.ratings || defaultSettings.ratings,
@@ -270,6 +281,7 @@ export async function saveSettings(settings?: Partial<Settings>): Promise<void> 
 			highlightActiveLine: generalSettings.readerSettings.highlightActiveLine,
 			customCss: generalSettings.readerSettings.customCss
 		},
+		video_clipping_settings: generalSettings.videoClipping,
 		stats: generalSettings.stats
 	});
 }

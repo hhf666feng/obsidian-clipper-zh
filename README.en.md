@@ -1,6 +1,6 @@
 ## Fork-specific changes
 
-This fork differs from the official [Obsidian Web Clipper](https://github.com/obsidianmd/obsidian-clipper) main version by adding support for WeChat official account articles that lazy-load images through `data-src` and `data-srcset`. The clipping pipeline normalizes those image URLs before extraction so Obsidian's local image saving can download the original article images instead of placeholders or WeChat runtime lazy-load URLs. This fork uses the Simplified Chinese README as the default and keeps this English README available separately.
+This fork differs from the official [Obsidian Web Clipper](https://github.com/obsidianmd/obsidian-clipper) main version by improving Chinese-language content archiving. It normalizes lazy-loaded images in WeChat official account articles so Obsidian's local image saving can download the original article images, and it now has initial one-click clipping support for Bilibili, Douyin, and YouTube video pages. Video clips save the title, creator, publish time, cover image, description, summary, video link, and captions or transcripts when they are available. This fork uses the Simplified Chinese README as the default and keeps this English README available separately.
 
 Languages: [Simplified Chinese](README.md) | English
 
@@ -13,6 +13,9 @@ This fork is intended for users searching for issues like these:
 - WeChat lazy-loading keeps the original image URLs in `data-src` or `data-srcset`, while clipping captures runtime URLs with `wx_lazy`, `#imgIndex`, or `tp=webp`.
 - Articles clipped from `mp.weixin.qq.com` include `mmbiz.qpic.cn` images that Obsidian cannot reliably download or archive.
 - You want Obsidian's local image saving to capture the original WeChat article images without manually scrolling, refreshing images, or running a second pass inside Obsidian.
+- Obsidian Web Clipper clips Bilibili, Douyin, or YouTube video pages as plain web pages and misses the title, creator, cover image, publish time, description, captions, or transcript.
+- You want to archive videos in Obsidian with a ready-made video note, summary, transcript, source link, and optional download command.
+- You want video archiving metadata without a browser extension that embeds a video downloader or automatically runs local commands.
 
 Obsidian Web Clipper helps you highlight and capture the web in your favorite browser. Anything you save is stored as durable Markdown files that you can read offline, and preserve for the long term.
 
@@ -35,6 +38,10 @@ Documentation is available on the [Obsidian Help site](https://help.obsidian.md/
 
 Web Clipper also normalizes lazy-loaded images before extracting content. This helps pages that keep their real image URLs in attributes such as `data-src` or `data-srcset`, including WeChat official account articles, so image capture and Obsidian's local image saving use the original image URLs instead of placeholders or runtime lazy-load URLs.
 
+For Bilibili, Douyin, and YouTube video pages, Web Clipper automatically selects the built-in Video clipping template and injects variables such as `{{videoTitle}}`, `{{videoAuthor}}`, `{{videoPublished}}`, `{{videoCover}}`, `{{videoDescription}}`, `{{videoSummary}}`, `{{videoTranscript}}`, `{{videoPlatform}}`, and `{{videoDownloadCommand}}`. The default summary is generated from the description or the beginning of the transcript and does not call an external AI provider. If you already use the interpreter, you can still add prompt variables to your own video templates for AI summaries.
+
+Video downloading is off by default. When enabled, the extension only writes an external command to the note, for example the `yt-dlp` command `yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"`. The extension does not run the command, does not download video streams itself, and does not bypass platform restrictions.
+
 ## Contribute
 
 ### Translations
@@ -53,7 +60,8 @@ In no particular order:
 - [ ] Annotate highlights
 - [ ] Template directory
 - [ ] Sync settings across browsers
-- [ ] One-click clipping for video platforms such as Bilibili, Douyin, and YouTube, including title, creator, publish time, cover image, description, video link, captions or transcripts, and other metadata useful for Obsidian archives
+- [x] One-click clipping for video platforms such as Bilibili, Douyin, and YouTube, including title, creator, publish time, cover image, description, video link, captions or transcripts, and other metadata useful for Obsidian archives
+- [ ] Continue improving video clipping with more reliable transcript capture, mobile share-link handling, short-video page support, template examples, and manual acceptance checks
 - [x] Template validation
 - [x] Template logic (if/for)
 - [x] Save images locally, [added in Obsidian 1.8.0](https://obsidian.md/changelog/2024-12-18-desktop-v1.8.0/)
@@ -118,6 +126,12 @@ When changing content extraction or image handling, run the focused regression t
 
 ```
 npx vitest run src/api.test.ts src/utils/lazy-images.test.ts src/utils/filters/image.test.ts
+```
+
+When changing video clipping logic, run:
+
+```
+npx vitest run src/utils/video-clipping.test.ts src/api.test.ts
 ```
 
 ## Third-party libraries

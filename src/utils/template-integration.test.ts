@@ -12,6 +12,7 @@ import { createAsyncResolver, createSelectorProcessor } from '../api';
 // Freeze time so {{date}} is deterministic in expected output
 // ---------------------------------------------------------------------------
 
+process.env.TZ = 'America/Los_Angeles';
 const FROZEN_DATE = new Date('2025-01-15T12:00:00Z');
 
 beforeAll(() => { vi.useFakeTimers({ now: FROZEN_DATE }); });

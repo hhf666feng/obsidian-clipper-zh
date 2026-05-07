@@ -9,7 +9,7 @@ import { AsyncResolver, RenderContext } from './utils/renderer';
 import { applyFilters } from './utils/filters';
 import { buildVariables, generateFrontmatter, extractContentBySelector, selectorContentToString, formatPropertyValue } from './utils/shared';
 import { sanitizeFileName } from './utils/string-utils';
-import { Template, Property } from './types/types';
+import { Template, Property, VideoClippingSettings } from './types/types';
 import { normalizeLazyLoadedImages, normalizeLazyLoadedImagesInHtml } from './utils/lazy-images';
 
 // ---------------------------------------------------------------------------
@@ -26,6 +26,7 @@ export interface ClipOptions {
 	template: Template;
 	documentParser: DocumentParser;
 	propertyTypes?: Record<string, string>;
+	videoClippingSettings?: Partial<VideoClippingSettings>;
 	/** Pre-parsed document to skip re-parsing (e.g. when already parsed for trigger matching). */
 	parsedDocument?: any;
 }
@@ -175,7 +176,7 @@ export function matchTemplate(templates: Template[], url: string, schemaOrgData?
  * - Writing the output (file, vault API, etc.)
  */
 export async function clip(options: ClipOptions): Promise<ClipResult> {
-	const { html, url, template, documentParser, propertyTypes, parsedDocument } = options;
+	const { html, url, template, documentParser, propertyTypes, parsedDocument, videoClippingSettings } = options;
 
 	// Use pre-parsed document if provided, otherwise parse
 	const doc = parsedDocument ?? documentParser.parseFromString(html, 'text/html');
@@ -209,6 +210,7 @@ export async function clip(options: ClipOptions): Promise<ClipResult> {
 		schemaOrgData: defuddleResult.schemaOrgData,
 		metaTags: defuddleResult.metaTags,
 		extractedContent: defuddleResult.variables,
+		videoClippingSettings,
 	});
 
 	// Create resolvers for selector variables

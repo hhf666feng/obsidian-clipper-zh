@@ -203,6 +203,72 @@
 										</div>
 									</div>
 								</div>
+								<div class="setting-item setting-item-heading"><h3 data-i18n="videoClipping">Video clipping</h3></div>
+								<div class="setting-items">
+									<div class="setting-item mod-horizontal mod-toggle">
+										<div class="setting-item-info">
+											<label for="video-template-toggle" data-i18n="videoTemplate">Use video template automatically</label>
+											<div class="setting-item-description" data-i18n="videoTemplateDescription">
+												Automatically select the built-in video clipping template for Bilibili, Douyin, and YouTube pages.
+											</div>
+										</div>
+										<div class="setting-item-control">
+											<div class="checkbox-container">
+												<input type="checkbox" id="video-template-toggle" />
+											</div>
+										</div>
+									</div>
+									<div class="setting-item mod-horizontal mod-toggle">
+										<div class="setting-item-info">
+											<label for="video-transcript-toggle" data-i18n="videoTranscript">Include captions / transcript</label>
+											<div class="setting-item-description" data-i18n="videoTranscriptDescription">
+												Save platform captions or transcripts when the page extractor can access them.
+											</div>
+										</div>
+										<div class="setting-item-control">
+											<div class="checkbox-container">
+												<input type="checkbox" id="video-transcript-toggle" />
+											</div>
+										</div>
+									</div>
+									<div class="setting-item mod-horizontal mod-toggle">
+										<div class="setting-item-info">
+											<label for="video-summary-toggle" data-i18n="videoSummary">Include summary</label>
+											<div class="setting-item-description" data-i18n="videoSummaryDescription">
+												Generate a lightweight summary from the video description or transcript without calling an external AI provider.
+											</div>
+										</div>
+										<div class="setting-item-control">
+											<div class="checkbox-container">
+												<input type="checkbox" id="video-summary-toggle" />
+											</div>
+										</div>
+									</div>
+									<div class="setting-item mod-horizontal mod-toggle">
+										<div class="setting-item-info">
+											<label for="video-download-command-toggle" data-i18n="videoDownloadCommand">Include download command</label>
+											<div class="setting-item-description" data-i18n="videoDownloadCommandDescription">
+												Add an external downloader command to the note. Web Clipper never runs the command or downloads video streams itself.
+											</div>
+										</div>
+										<div class="setting-item-control">
+											<div class="checkbox-container">
+												<input type="checkbox" id="video-download-command-toggle" />
+											</div>
+										</div>
+									</div>
+									<div class="setting-item mod-horizontal">
+										<div class="setting-item-info">
+											<label for="video-download-command-template" data-i18n="videoDownloadCommandTemplate">Download command template</label>
+											<div class="setting-item-description" data-i18n="videoDownloadCommandTemplateDescription">
+												Use variables such as {{url}}, {{videoTitle}}, {{videoAuthor}}, and {{videoPlatform}}.
+											</div>
+										</div>
+										<div class="setting-item-control">
+											<input type="text" id="video-download-command-template" spellcheck="false" autocomplete="off" />
+										</div>
+									</div>
+								</div>
 								<div class="setting-item setting-item-heading"><h3 data-i18n="advanced">Advanced</h3></div>
 								<div class="setting-items">
 									<div class="setting-item mod-horizontal">
