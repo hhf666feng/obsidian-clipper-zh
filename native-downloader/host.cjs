@@ -38,10 +38,66 @@ function writeNativeMessage(payload) {
 	fs.writeSync(1, body);
 }
 
-function expandPath(value) {
-	const trimmed = String(value || '').trim();
+function safePathSegment(value) {
+	return String(value || '')
+		.trim()
+		.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
+}
+
+function safeRelativePath(value) {
+	return String(value || '')
+		.split(/[\\/]+/)
+		.map(segment => safePathSegment(segment))
+		.filter(Boolean)
+		.join(path.sep);
+}
+
+function readObsidianVaults() {
+	const configPath = path.join(os.homedir(), 'Library', 'Application Support', 'obsidian', 'obsidian.json');
+	try {
+		const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+		return Object.values(config.vaults || {}).filter(vault => vault && typeof vault === 'object');
+	} catch {
+		return [];
+	}
+}
+
+function resolveVaultRoot(vaultName) {
+	const normalizedVaultName = String(vaultName || '').trim();
+	const vaults = readObsidianVaults();
+	if (normalizedVaultName) {
+		const exact = vaults.find(vault => typeof vault.path === 'string'
+			&& (vault.path === normalizedVaultName || path.basename(vault.path) === normalizedVaultName));
+		if (exact?.path) {
+			return exact.path;
+		}
+		return path.join(os.homedir(), 'Documents', safePathSegment(normalizedVaultName));
+	}
+
+	const openVault = vaults.find(vault => vault.open && typeof vault.path === 'string');
+	if (openVault?.path) {
+		return openVault.path;
+	}
+	return path.join(os.homedir(), 'Documents');
+}
+
+function renderPathTemplate(value, request) {
+	return String(value || '')
+		.split('{{vaultRoot}}').join(resolveVaultRoot(request.vault))
+		.split('{{vault}}').join(safePathSegment(request.vault))
+		.split('{{path}}').join(safeRelativePath(request.notePath))
+		.split('{{notePath}}').join(safeRelativePath(request.notePath))
+		.split('{{noteName}}').join(safePathSegment(request.noteName))
+		.split('{{videoPlatform}}').join(safePathSegment(request.platform))
+		.split('{{videoAuthor}}').join(safePathSegment(request.author))
+		.split('{{videoTitle}}').join(safePathSegment(request.title));
+}
+
+function expandPath(value, request) {
+	const rendered = renderPathTemplate(value, request);
+	const trimmed = rendered.trim();
 	if (!trimmed || trimmed === '~') {
-		return path.join(os.homedir(), 'Downloads', 'Obsidian Web Clipper Videos');
+		return path.join(os.homedir(), 'Documents', '99-Assets');
 	}
 	if (trimmed.startsWith('~/')) {
 		return path.join(os.homedir(), trimmed.slice(2));
@@ -113,7 +169,7 @@ function spawnDetached(candidates, args, index = 0) {
 
 function startDownload(request) {
 	const url = assertValidRequest(request);
-	const outputDirectory = expandPath(request.outputDirectory);
+	const outputDirectory = expandPath(request.outputDirectory, request);
 	fs.mkdirSync(outputDirectory, { recursive: true });
 
 	const executable = String(request.executable || process.env.OBSIDIAN_CLIPPER_YTDLP || 'yt-dlp').trim() || 'yt-dlp';

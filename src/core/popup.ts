@@ -1266,7 +1266,7 @@ async function handleSaveToDownloads() {
 
 		const tabInfo = await getCurrentTabInfo();
 		await incrementStat('saveFile', vault, path, tabInfo.url, tabInfo.title);
-		await startVideoDownloadAfterClip();
+		await startVideoDownloadAfterClip({ vault, path, noteName: fileName });
 
 		const moreDropdown = document.getElementById('more-dropdown');
 		if (moreDropdown) {
@@ -1348,16 +1348,16 @@ async function handleClipObsidian(): Promise<void> {
 		const isDailyNote = currentTemplate.behavior === 'append-daily' || currentTemplate.behavior === 'prepend-daily';
 		const noteName = isDailyNote ? '' : noteNameField?.value || '';
 		const path = isDailyNote ? '' : pathField?.value || '';
+		const videoDownloadReady = await startVideoDownloadAfterClip({ vault: selectedVault, path, noteName });
 
 		await saveToObsidian(fileContent, noteName, path, selectedVault, currentTemplate.behavior);
 		const tabInfo = await getCurrentTabInfo();
 		await incrementStat('addToObsidian', selectedVault, path, tabInfo.url, tabInfo.title);
-		await startVideoDownloadAfterClip();
 
 		lastSelectedVault = selectedVault;
 		await setLocalStorage('lastSelectedVault', lastSelectedVault);
 
-		if (!isSidePanel) {
+		if (!isSidePanel && videoDownloadReady) {
 			setTimeout(() => window.close(), 500);
 		}
 	} catch (error) {
@@ -1367,11 +1367,14 @@ async function handleClipObsidian(): Promise<void> {
 	}
 }
 
-async function startVideoDownloadAfterClip(): Promise<void> {
-	const response = await startNativeVideoDownload(currentVariables, generalSettings.videoClipping);
+async function startVideoDownloadAfterClip(context: { vault?: string; path?: string; noteName?: string }): Promise<boolean> {
+	const response = await startNativeVideoDownload(currentVariables, generalSettings.videoClipping, context);
 	if (response && !response.ok) {
 		console.warn('Video auto download was not started:', response.error || 'unknown error');
+		showError('videoAutoDownloadFailed');
+		return false;
 	}
+	return true;
 }
 
 function addSecondaryAction(container: Element, actionType: string, handler: () => void) {

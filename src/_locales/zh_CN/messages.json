@@ -1085,16 +1085,19 @@
 		"message": "剪切视频后，通过已安装的本机助手在后台启动 yt-dlp 下载。"
 	},
 	"videoAutoDownloadDirectory": {
-		"message": "视频下载目录"
+		"message": "视频下载目录模板"
 	},
 	"videoAutoDownloadDirectoryDescription": {
-		"message": "供本机助手使用。以 ~/ 开头的路径会解析到你的用户目录。"
+		"message": "默认保存到 {{vaultRoot}}/99-Assets/{{path}}。本机助手会从 Obsidian 配置解析 vaultRoot；也可使用 {{vault}}、{{noteName}} 等变量。"
 	},
 	"videoAutoDownloadExecutable": {
 		"message": "yt-dlp 可执行文件"
 	},
 	"videoAutoDownloadExecutableDescription": {
 		"message": "如果 yt-dlp 已在 PATH 中，可保持默认；也可以填写完整路径。"
+	},
+	"videoAutoDownloadFailed": {
+		"message": "剪切会继续保存，但自动视频下载没有启动。请确认 native-downloader 已用当前扩展 ID 安装，并已安装 yt-dlp。"
 	},
 	"videoSummary": {
 		"message": "包含摘要"

@@ -25,6 +25,6 @@ Firefox：
 
 安装后重启浏览器。
 
-扩展只会把视频 URL、标题、作者、平台和下载目录发送给这个助手。助手不会通过 shell 拼接执行命令，而是直接启动配置好的 `yt-dlp` 可执行文件，视频默认保存到 `~/Downloads/Obsidian Web Clipper Videos`。
+扩展只会把视频 URL、标题、作者、平台、知识库名、笔记路径和下载目录发送给这个助手。助手不会通过 shell 拼接执行命令，而是直接启动配置好的 `yt-dlp` 可执行文件。默认目录模板是 `{{vaultRoot}}/99-Assets/{{path}}`，助手会从本机 Obsidian 配置中解析知识库真实路径，例如 `/Users/admin/Documents/Obsidian Vault/99-Assets/Clippings/Videos`。
 
 下载仍受平台登录状态、地区、会员权限和 `yt-dlp` 支持范围限制。本项目不内置下载器，也不绕过平台限制。

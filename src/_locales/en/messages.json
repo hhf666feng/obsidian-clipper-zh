@@ -1085,16 +1085,19 @@
 		"message": "After clipping a video, ask the installed native helper to start yt-dlp in the background."
 	},
 	"videoAutoDownloadDirectory": {
-		"message": "Video download folder"
+		"message": "Video download folder template"
 	},
 	"videoAutoDownloadDirectoryDescription": {
-		"message": "Used by the native helper. Paths starting with ~/ are resolved from your home folder."
+		"message": "Defaults to {{vaultRoot}}/99-Assets/{{path}}. The native helper resolves vaultRoot from Obsidian config; {{vault}} and {{noteName}} are also supported."
 	},
 	"videoAutoDownloadExecutable": {
 		"message": "yt-dlp executable"
 	},
 	"videoAutoDownloadExecutableDescription": {
 		"message": "Use yt-dlp if it is on PATH, or enter the full path to the executable."
+	},
+	"videoAutoDownloadFailed": {
+		"message": "The clip will still be saved, but automatic video download did not start. Make sure native-downloader is installed with the current extension ID and yt-dlp is installed."
 	},
 	"videoSummary": {
 		"message": "Include summary"

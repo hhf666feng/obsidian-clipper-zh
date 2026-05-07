@@ -283,9 +283,9 @@
 									</div>
 									<div class="setting-item mod-horizontal">
 										<div class="setting-item-info">
-											<label for="video-auto-download-directory" data-i18n="videoAutoDownloadDirectory">Video download folder</label>
+											<label for="video-auto-download-directory" data-i18n="videoAutoDownloadDirectory">Video download folder template</label>
 											<div class="setting-item-description" data-i18n="videoAutoDownloadDirectoryDescription">
-												Used by the native helper. Paths starting with ~/ are resolved from your home folder.
+												Defaults to {{vaultRoot}}/99-Assets/{{path}}. The native helper resolves vaultRoot from Obsidian config; {{vault}} and {{noteName}} are also supported.
 											</div>
 										</div>
 										<div class="setting-item-control">
