@@ -12,6 +12,7 @@ import {
 	wrapElementWithMark,
 	wrapTextWithMark
 } from './dom-utils';
+import { normalizeLazyLoadedImagesInHtml } from './lazy-images';
 
 // Define ElementHighlightData type inline since it's not exported from highlighter.ts
 interface ElementHighlightData extends HighlightData {
@@ -148,6 +149,7 @@ export async function initializePageContent(
 
 		let selectedMarkdown = '';
 		if (selectedHtml) {
+			selectedHtml = normalizeLazyLoadedImagesInHtml(selectedHtml, currentUrl);
 			content = selectedHtml;
 			selectedMarkdown = createMarkdownContent(selectedHtml, currentUrl);
 		}
@@ -157,6 +159,7 @@ export async function initializePageContent(
 			content = processHighlights(content, highlights);
 		}
 
+		content = normalizeLazyLoadedImagesInHtml(content, currentUrl);
 		const markdownBody = createMarkdownContent(content, currentUrl);
 
 		const highlightsData = collapseGroupsForExport(highlights, c => createMarkdownContent(c, currentUrl));

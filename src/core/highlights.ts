@@ -12,6 +12,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { createIcons } from 'lucide';
 import { icons } from '../icons/icons';
 import { initializeMenu } from '../managers/menu';
+import { normalizeLazyLoadedImages, normalizeLazyLoadedImagesInHtml } from '../utils/lazy-images';
 
 dayjs.extend(relativeTime);
 
@@ -1135,6 +1136,7 @@ async function fetchDefuddled(url: string): Promise<DefuddleResult | null> {
 		const base = doc.createElement('base');
 		base.href = url;
 		doc.head.prepend(base);
+		normalizeLazyLoadedImages(doc, url);
 
 		const defuddled = new Defuddle(doc, { url }).parse();
 
@@ -1244,7 +1246,9 @@ function createHighlightItem(entries: HighlightEntry[], pageUrl: string): HTMLEl
 	copyIcon.setAttribute('data-lucide', 'copy');
 	copyBtn.appendChild(copyIcon);
 	copyBtn.addEventListener('click', async () => {
-		const markdown = entries.map(e => createMarkdownContent(e.data.content || '', pageUrl)).join('\n\n');
+		const markdown = entries
+			.map(e => createMarkdownContent(normalizeLazyLoadedImagesInHtml(e.data.content || '', pageUrl), pageUrl))
+			.join('\n\n');
 		await navigator.clipboard.writeText(markdown);
 		copyBtn.classList.add('is-copied');
 		setButtonIcon(copyBtn, 'check');

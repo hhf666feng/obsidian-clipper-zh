@@ -1,5 +1,6 @@
 import Defuddle from 'defuddle/full';
 import { setElementHTML } from './dom-utils';
+import { normalizeLazyLoadedImages } from './lazy-images';
 
 // Parse document content for clipping. In reader mode, extracts from
 // the article's original HTML to avoid reader UI artifacts.
@@ -15,7 +16,9 @@ export function parseForClip(doc: Document) {
 				...Array.from(readerArticle.childNodes).map(n => readerDoc.importNode(n, true))
 			);
 		}
+		normalizeLazyLoadedImages(readerDoc, doc.URL);
 		return new Defuddle(readerDoc, { url: '' }).parse();
 	}
+	normalizeLazyLoadedImages(doc, doc.URL);
 	return new Defuddle(doc, { url: doc.URL }).parse();
 }

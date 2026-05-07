@@ -10,6 +10,7 @@ import { applyFilters } from './utils/filters';
 import { buildVariables, generateFrontmatter, extractContentBySelector, selectorContentToString, formatPropertyValue } from './utils/shared';
 import { sanitizeFileName } from './utils/string-utils';
 import { Template, Property } from './types/types';
+import { normalizeLazyLoadedImages, normalizeLazyLoadedImagesInHtml } from './utils/lazy-images';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -178,24 +179,26 @@ export async function clip(options: ClipOptions): Promise<ClipResult> {
 
 	// Use pre-parsed document if provided, otherwise parse
 	const doc = parsedDocument ?? documentParser.parseFromString(html, 'text/html');
-	const documentElement = doc.documentElement || doc;
+	const defuddleInput = doc.nodeType === 9 ? doc : (doc.documentElement || doc);
+	normalizeLazyLoadedImages(doc, url);
 
 	// Extract content with defuddle
 	// Cast through unknown: linkedom's Document is structurally compatible but not nominally typed as DOM Document
-	const defuddle = new DefuddleClass(documentElement as unknown as Document, { url });
+	const defuddle = new DefuddleClass(defuddleInput as unknown as Document, { url });
 	const defuddleResult = defuddle.parse();
+	const contentHtml = normalizeLazyLoadedImagesInHtml(defuddleResult.content, url);
 
 	// Convert to markdown
-	const markdownContent = createMarkdownContent(defuddleResult.content, url);
+	const markdownContent = createMarkdownContent(contentHtml, url);
 
 	// Build template variables
 	const variables = buildVariables({
 		title: defuddleResult.title,
 		author: defuddleResult.author,
 		content: markdownContent,
-		contentHtml: defuddleResult.content,
+		contentHtml,
 		url,
-		fullHtml: html,
+		fullHtml: doc.documentElement?.outerHTML || html,
 		description: defuddleResult.description,
 		favicon: defuddleResult.favicon,
 		image: defuddleResult.image,
