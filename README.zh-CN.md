@@ -1,3 +1,7 @@
+## 版本差异说明
+
+这是基于官方 [Obsidian Web Clipper](https://github.com/obsidianmd/obsidian-clipper) 的 fork 版本。相比官方主版本，本版本增加了对微信公众号文章懒加载图片的处理：在内容提取前，会把 `data-src`、`data-srcset` 等属性中的真实图片地址规范化到图片节点上，让 Obsidian 本地图片保存能下载原始文章图片，而不是占位图或微信运行时懒加载地址。本版本还补充了简体中文 README。
+
 语言：[English](README.md) | 简体中文
 
 Obsidian Web Clipper 可帮助你在常用浏览器中高亮并裁剪网页。保存的内容会以耐久的 Markdown 文件形式存入你的 Obsidian 仓库，方便离线阅读和长期保存。
