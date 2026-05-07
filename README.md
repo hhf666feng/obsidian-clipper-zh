@@ -17,6 +17,8 @@ Install the extension by downloading it from the official directory for your bro
 
 Documentation is available on the [Obsidian Help site](https://help.obsidian.md/web-clipper), which covers how to use [highlighting](https://help.obsidian.md/web-clipper/highlight), [templates](https://help.obsidian.md/web-clipper/templates), [variables](https://help.obsidian.md/web-clipper/variables), [filters](https://help.obsidian.md/web-clipper/filters), and more.
 
+Web Clipper also normalizes lazy-loaded images before extracting content. This helps pages that keep their real image URLs in attributes such as `data-src` or `data-srcset`, including WeChat official account articles, so image capture and Obsidian's local image saving use the original image URLs instead of placeholders or runtime lazy-load URLs.
+
 ## Contribute
 
 ### Translations
@@ -93,6 +95,12 @@ Or run in watch mode during development:
 
 ```
 npm run test:watch
+```
+
+When changing content extraction or image handling, run the focused regression tests:
+
+```
+npx vitest run src/api.test.ts src/utils/lazy-images.test.ts src/utils/filters/image.test.ts
 ```
 
 ## Third-party libraries
