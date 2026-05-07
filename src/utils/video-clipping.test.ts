@@ -67,6 +67,9 @@ describe('video clipping', () => {
 			<html>
 				<head>
 					<script>
+						var vd = window.__INITIAL_STATE__ && window.__INITIAL_STATE__.videoData;
+					</script>
+					<script>
 						window.__INITIAL_STATE__={
 							"videoData":{
 								"title":"全网最全！60分钟全面掌握Claude Code～【附完整文档】",
@@ -99,11 +102,49 @@ describe('video clipping', () => {
 			platform: 'bilibili',
 			title: '全网最全！60分钟全面掌握Claude Code～【附完整文档】',
 			author: '秋芝2046',
-			description: "Claude Code's 保姆级教学【收藏起来不会错！】\n从上手安装，到高级用法，这期一次讲全～",
+			description: "Claude Code's 保姆级教学【收藏起来不会错！】 从上手安装，到高级用法，这期一次讲全～",
 			cover: 'https://i2.hdslb.com/bfs/archive/4ef379f4341e05c09ba920b4a4ccc6d6cf54f076.jpg',
 		});
 		expect(data?.published).toBe('2026-05-05T14:08:25.000Z');
 		expect(data?.summary).not.toContain('相关推荐');
+	});
+
+	test('extracts clean Bilibili data from live-page schema and meta fallbacks', () => {
+		const data = extractVideoClipData({
+			url: 'https://www.bilibili.com/video/BV1NvRyBzEhq/?spm_id_from=333.1007.tianma.1-1-1.click',
+			title: '%E5%85%A8%E7%BD%91%E6%9C%80%E5%85%A8%EF%BC%8160%E5%88%86%E9%92%9F%E5%85%A8%E9%9D%A2%E6%8E%8C%E6%8F%A1Claude%20Code%EF%BD%9E%E3%80%90%E9%99%84%E5%AE%8C%E6%95%B4%E6%96%87%E6%A1%A3%E3%80%91',
+			author: '',
+			description: 'Claude Code保姆级教学【收藏起来不会错！】从上手安装，到高级用法，这期一次讲全～, 视频播放量 254762、弹幕量 1576、点赞数 17014、相关视频：污染内容',
+			image: '',
+			published: '',
+			schemaOrgData: {
+				'@context': 'https://schema.org',
+				'@type': 'VideoObject',
+				name: '%E5%85%A8%E7%BD%91%E6%9C%80%E5%85%A8%EF%BC%8160%E5%88%86%E9%92%9F%E5%85%A8%E9%9D%A2%E6%8E%8C%E6%8F%A1Claude%20Code%EF%BD%9E%E3%80%90%E9%99%84%E5%AE%8C%E6%95%B4%E6%96%87%E6%A1%A3%E3%80%91',
+				description: 'Claude%20Code%E4%BF%9D%E5%A7%86%E7%BA%A7%E6%95%99%E5%AD%A6%E3%80%90%E6%94%B6%E8%97%8F%E8%B5%B7%E6%9D%A5%E4%B8%8D%E4%BC%9A%E9%94%99%EF%BC%81%E3%80%91%0A%E4%BB%8E%E4%B8%8A%E6%89%8B%E5%AE%89%E8%A3%85%EF%BC%8C%E5%88%B0%E9%AB%98%E7%BA%A7%E7%94%A8%E6%B3%95%EF%BC%8C%E8%BF%99%E6%9C%9F%E4%B8%80%E6%AC%A1%E8%AE%B2%E5%85%A8%EF%BD%9E',
+				thumbnailUrl: ['http://i2.hdslb.com/bfs/archive/cover.jpg@189w_107h.jpg'],
+				uploadDate: '2026-05-05 22:08:25',
+			},
+			metaTags: [
+				{ name: 'author', content: '秋芝2046' },
+				{ name: 'title', itemprop: 'name', content: '全网最全！60分钟全面掌握Claude Code～【附完整文档】_哔哩哔哩_bilibili' },
+				{ itemprop: 'thumbnailUrl', content: '//i2.hdslb.com/bfs/archive/4ef379f4341e05c09ba920b4a4ccc6d6cf54f076.jpg@100w_100h_1c.png' },
+				{ itemprop: 'uploadDate', content: '2026-05-05 22:08:25' },
+			],
+			extractedContent: {},
+			fullHtml: '<script>var vd = window.__INITIAL_STATE__ && window.__INITIAL_STATE__.videoData</script>',
+		});
+
+		expect(data).toMatchObject({
+			platform: 'bilibili',
+			title: '全网最全！60分钟全面掌握Claude Code～【附完整文档】',
+			author: '秋芝2046',
+			description: 'Claude Code保姆级教学【收藏起来不会错！】 从上手安装，到高级用法，这期一次讲全～',
+			cover: 'https://i2.hdslb.com/bfs/archive/cover.jpg',
+		});
+		expect(data?.published).toBe('2026-05-05T14:08:25.000Z');
+		expect(data?.summary).not.toContain('视频播放量');
+		expect(data?.summary).not.toContain('相关视频');
 	});
 
 	test('extracts Douyin video data from universal render data', () => {
