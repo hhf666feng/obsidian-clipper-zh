@@ -40,7 +40,7 @@ export const DEFAULT_VIDEO_CLIPPING_SETTINGS: VideoClippingSettings = {
 	enableVideoTemplate: true,
 	includeTranscript: true,
 	includeSummary: true,
-	includeDownloadCommand: false,
+	includeDownloadCommand: true,
 	downloadCommandTemplate: DEFAULT_VIDEO_DOWNLOAD_COMMAND_TEMPLATE,
 };
 
@@ -171,6 +171,39 @@ function metaContent(metaTags: VideoClipExtractionInput['metaTags'], key: string
 	return metaTags?.find(meta => meta.property === key || meta.name === key || meta.itemprop === key)?.content?.trim() || '';
 }
 
+function htmlMetaContent(fullHtml: string, key: string): string {
+	if (!fullHtml) return '';
+
+	const metaTagPattern = /<meta\b[^>]*>/gi;
+	let match: RegExpExecArray | null;
+	while ((match = metaTagPattern.exec(fullHtml)) !== null) {
+		const tag = match[0];
+		const matchesKey = ['property', 'name', 'itemprop'].some(attr => {
+			const value = htmlAttributeValue(tag, attr);
+			return value === key;
+		});
+		if (matchesKey) {
+			return htmlAttributeValue(tag, 'content').trim();
+		}
+	}
+	return '';
+}
+
+function htmlAttributeValue(tag: string, attr: string): string {
+	const pattern = new RegExp(`${attr}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s"'>]+))`, 'i');
+	const match = tag.match(pattern);
+	return decodeHtmlEntities(match?.[2] || match?.[3] || match?.[4] || '');
+}
+
+function decodeHtmlEntities(value: string): string {
+	return value
+		.replace(/&quot;/g, '"')
+		.replace(/&#39;/g, "'")
+		.replace(/&amp;/g, '&')
+		.replace(/&lt;/g, '<')
+		.replace(/&gt;/g, '>');
+}
+
 function flattenSchemas(schemaOrgData: any): any[] {
 	if (!schemaOrgData) return [];
 	const queue = Array.isArray(schemaOrgData) ? [...schemaOrgData] : [schemaOrgData];
@@ -283,6 +316,10 @@ function extractBilibiliVideo(input: VideoClipExtractionInput): Partial<VideoCli
 	const state = extractJsonAssignment(input.fullHtml || '', 'window.__INITIAL_STATE__');
 	const videoData = state?.videoData || state?.videoInfo || {};
 	const schemaData = extractSchemaVideo(input);
+	const rawUploadDate = metaContent(input.metaTags, 'uploadDate')
+		|| metaContent(input.metaTags, 'datePublished')
+		|| htmlMetaContent(input.fullHtml || '', 'uploadDate')
+		|| htmlMetaContent(input.fullHtml || '', 'datePublished');
 	const title = cleanBilibiliTitle(firstValue(videoData.title)
 		|| schemaData.title
 		|| metaContent(input.metaTags, 'title')
@@ -299,7 +336,7 @@ function extractBilibiliVideo(input: VideoClipExtractionInput): Partial<VideoCli
 			|| schemaData.author
 			|| input.author,
 		published: normalizeDate(videoData.pubdate || videoData.ctime)
-			|| normalizeDate(metaContent(input.metaTags, 'uploadDate') || metaContent(input.metaTags, 'datePublished'))
+			|| normalizeDate(rawUploadDate)
 			|| schemaData.published,
 		cover: normalizeBilibiliImageUrl(firstValue(videoData.pic || videoData.cover)
 			|| schemaData.cover

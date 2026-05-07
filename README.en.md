@@ -14,7 +14,7 @@ This fork is intended for users searching for issues like these:
 - Articles clipped from `mp.weixin.qq.com` include `mmbiz.qpic.cn` images that Obsidian cannot reliably download or archive.
 - You want Obsidian's local image saving to capture the original WeChat article images without manually scrolling, refreshing images, or running a second pass inside Obsidian.
 - Obsidian Web Clipper clips Bilibili, Douyin, or YouTube video pages as plain web pages and misses the title, creator, cover image, publish time, description, captions, or transcript.
-- You want to archive videos in Obsidian with a ready-made video note, summary, transcript, source link, and optional download command.
+- You want to archive videos in Obsidian with a ready-made video note, summary, transcript, source link, and default download command.
 - You want video archiving metadata without a browser extension that embeds a video downloader or automatically runs local commands.
 
 Obsidian Web Clipper helps you highlight and capture the web in your favorite browser. Anything you save is stored as durable Markdown files that you can read offline, and preserve for the long term.
@@ -40,7 +40,7 @@ Web Clipper also normalizes lazy-loaded images before extracting content. This h
 
 For Bilibili, Douyin, and YouTube video pages, Web Clipper automatically selects the built-in Video clipping template and injects variables such as `{{videoTitle}}`, `{{videoAuthor}}`, `{{videoPublished}}`, `{{videoCover}}`, `{{videoDescription}}`, `{{videoSummary}}`, `{{videoTranscript}}`, `{{videoPlatform}}`, and `{{videoDownloadCommand}}`. The default summary is generated from the description or the beginning of the transcript and does not call an external AI provider. If you already use the interpreter, you can still add prompt variables to your own video templates for AI summaries.
 
-Video downloading is off by default. When enabled, the extension only writes an external command to the note, for example the `yt-dlp` command `yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"`. The extension does not run the command, does not download video streams itself, and does not bypass platform restrictions.
+Video download commands are enabled by default. When clipping a video page, the extension writes an external downloader command to the note, for example the `yt-dlp` command `yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"`, which you can run in a terminal to download the video. The extension does not run local commands automatically, does not bundle a downloader, and does not bypass platform restrictions.
 
 ## Contribute
 

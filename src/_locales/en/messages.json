@@ -1070,7 +1070,7 @@
 		"message": "Include download command"
 	},
 	"videoDownloadCommandDescription": {
-		"message": "Add an external downloader command to the note. Web Clipper never runs the command or downloads video streams itself."
+		"message": "Add an external downloader command to video notes by default. Copy it into a terminal to run it; Web Clipper does not execute local commands or bundle a downloader."
 	},
 	"videoDownloadCommandTemplate": {
 		"message": "Download command template"
