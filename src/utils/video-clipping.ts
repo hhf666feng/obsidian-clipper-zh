@@ -23,7 +23,7 @@ export interface VideoClipExtractionInput {
 	image: string;
 	published: string;
 	schemaOrgData?: any;
-	metaTags?: { name?: string | null; property?: string | null; content: string | null }[];
+	metaTags?: { name?: string | null; property?: string | null; itemprop?: string | null; content: string | null }[];
 	extractedContent?: Record<string, string>;
 	fullHtml?: string;
 }
@@ -130,6 +130,29 @@ function normalizeBilibiliImageUrl(value: string, baseUrl: string): string {
 	}
 }
 
+function decodePossiblyEncodedText(value: string): string {
+	const trimmed = value.trim();
+	if (!trimmed) return '';
+	try {
+		return /%[0-9A-Fa-f]{2}/.test(trimmed) ? decodeURIComponent(trimmed) : trimmed;
+	} catch {
+		return trimmed;
+	}
+}
+
+function cleanBilibiliTitle(value: string): string {
+	return decodePossiblyEncodedText(value)
+		.replace(/_哔哩哔哩_bilibili$/i, '')
+		.trim();
+}
+
+function cleanBilibiliDescription(value: string): string {
+	return decodePossiblyEncodedText(value)
+		.replace(/\s+/g, ' ')
+		.split(/[,，]\s*(?:视频播放量|弹幕量|点赞数|投硬币枚数|收藏人数|转发人数|视频作者|作者简介|相关视频)[：:]?/)[0]
+		.trim();
+}
+
 function normalizeDate(value: any): string {
 	if (value == null || value === '') return '';
 	if (typeof value === 'number') {
@@ -145,7 +168,7 @@ function normalizeDate(value: any): string {
 }
 
 function metaContent(metaTags: VideoClipExtractionInput['metaTags'], key: string): string {
-	return metaTags?.find(meta => meta.property === key || meta.name === key)?.content?.trim() || '';
+	return metaTags?.find(meta => meta.property === key || meta.name === key || meta.itemprop === key)?.content?.trim() || '';
 }
 
 function flattenSchemas(schemaOrgData: any): any[] {
@@ -182,10 +205,16 @@ function extractSchemaVideo(input: VideoClipExtractionInput): Partial<VideoClipD
 
 function extractJsonAssignment(fullHtml: string, variableName: string): any {
 	const marker = `${variableName}`;
-	const start = fullHtml.indexOf(marker);
+	let start = fullHtml.indexOf(marker);
+	while (start !== -1) {
+		let equals = start + marker.length;
+		while (/\s/.test(fullHtml[equals] || '')) equals++;
+		if (fullHtml[equals] === '=') break;
+		start = fullHtml.indexOf(marker, start + marker.length);
+	}
 	if (start === -1) return null;
-	const equals = fullHtml.indexOf('=', start);
-	if (equals === -1) return null;
+	let equals = start + marker.length;
+	while (/\s/.test(fullHtml[equals] || '')) equals++;
 	const objectStart = fullHtml.indexOf('{', equals);
 	if (objectStart === -1) return null;
 
@@ -253,12 +282,31 @@ function findObjectsByKeys(root: any, keys: string[]): any[] {
 function extractBilibiliVideo(input: VideoClipExtractionInput): Partial<VideoClipData> {
 	const state = extractJsonAssignment(input.fullHtml || '', 'window.__INITIAL_STATE__');
 	const videoData = state?.videoData || state?.videoInfo || {};
+	const schemaData = extractSchemaVideo(input);
+	const title = cleanBilibiliTitle(firstValue(videoData.title)
+		|| schemaData.title
+		|| metaContent(input.metaTags, 'title')
+		|| metaContent(input.metaTags, 'og:title')
+		|| input.title);
+	const description = cleanBilibiliDescription(firstValue(videoData.desc || videoData.description)
+		|| schemaData.description
+		|| metaContent(input.metaTags, 'description')
+		|| input.description);
 	return {
-		title: firstValue(videoData.title),
-		author: firstValue(videoData.owner?.name || videoData.author),
-		published: normalizeDate(videoData.pubdate || videoData.ctime),
-		cover: normalizeBilibiliImageUrl(firstValue(videoData.pic || videoData.cover), input.url),
-		description: firstValue(videoData.desc || videoData.description),
+		title,
+		author: firstValue(videoData.owner?.name || videoData.author)
+			|| metaContent(input.metaTags, 'author')
+			|| schemaData.author
+			|| input.author,
+		published: normalizeDate(videoData.pubdate || videoData.ctime)
+			|| schemaData.published
+			|| normalizeDate(metaContent(input.metaTags, 'uploadDate') || metaContent(input.metaTags, 'datePublished')),
+		cover: normalizeBilibiliImageUrl(firstValue(videoData.pic || videoData.cover)
+			|| schemaData.cover
+			|| metaContent(input.metaTags, 'og:image')
+			|| metaContent(input.metaTags, 'thumbnailUrl')
+			|| metaContent(input.metaTags, 'image'), input.url),
+		description,
 	};
 }
 

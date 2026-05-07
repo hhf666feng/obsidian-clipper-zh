@@ -108,7 +108,7 @@ declare global {
 		site: string;
 		wordCount: number;
 		language: string;
-		metaTags: { name?: string | null; property?: string | null; content: string | null }[];
+		metaTags: { name?: string | null; property?: string | null; itemprop?: string | null; content: string | null }[];
 	}
 
 	browser.runtime.onMessage.addListener((request: any, sender, sendResponse) => {

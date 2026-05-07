@@ -31,7 +31,7 @@ export interface BuildVariablesParams {
 	selectionHtml?: string;
 	highlights?: string;
 	schemaOrgData?: any;
-	metaTags?: { name?: string | null; property?: string | null; content: string | null }[];
+	metaTags?: { name?: string | null; property?: string | null; itemprop?: string | null; content: string | null }[];
 	extractedContent?: Record<string, string>;
 	videoClippingSettings?: Partial<VideoClippingSettings>;
 }
