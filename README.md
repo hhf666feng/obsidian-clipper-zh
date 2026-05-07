@@ -14,7 +14,7 @@
 - 从 `mp.weixin.qq.com` 裁剪文章后，`mmbiz.qpic.cn` 图片无法被 Obsidian 正确下载或归档。
 - 想让 Obsidian 的“本地保存图片”功能直接保存微信公众号原图，不再手动滚动页面、刷新图片、或在 Obsidian 端二次处理。
 - Obsidian Web Clipper 剪切 B 站视频、抖音视频、YouTube 视频时，只得到普通网页内容，缺少标题、作者、封面、发布时间、简介、字幕或转写。
-- 想把视频内容归档到 Obsidian：一键生成视频笔记、视频摘要、字幕转写、原始链接和可选下载命令。
+- 想把视频内容归档到 Obsidian：一键生成视频笔记、视频摘要、字幕转写、原始链接和默认下载命令。
 - 想保存视频资料，但不希望浏览器扩展内置视频下载器或自动执行本地命令。
 
 Obsidian Web Clipper 可帮助你在常用浏览器中高亮并裁剪网页。保存的内容会以耐久的 Markdown 文件形式存入你的 Obsidian 仓库，方便离线阅读和长期保存。
@@ -40,7 +40,7 @@ Web Clipper 会在提取内容前规范化懒加载图片。对于把真实图�
 
 对于 B 站、抖音、YouTube 视频页，Web Clipper 会自动选中内置“视频剪切”模板，并注入 `{{videoTitle}}`、`{{videoAuthor}}`、`{{videoPublished}}`、`{{videoCover}}`、`{{videoDescription}}`、`{{videoSummary}}`、`{{videoTranscript}}`、`{{videoPlatform}}`、`{{videoDownloadCommand}}` 等变量。摘要默认基于简介或字幕前段生成，不调用外部 AI；如果你已经配置了解释器，也可以继续在模板中使用提示变量生成 AI 摘要。
 
-视频下载默认关闭。开启后，扩展只会把外部下载命令写入笔记，例如基于 `yt-dlp` 的 `yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"`。扩展不会执行该命令，不会直接下载视频流，也不会绕过平台限制。
+视频下载命令默认开启。剪切视频页时，扩展会把外部下载命令写入笔记，例如基于 `yt-dlp` 的 `yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"`，你可以在终端中执行该命令完成下载。扩展不会自动执行本地命令，不会内置下载器，也不会绕过平台限制。
 
 ## 贡献
 

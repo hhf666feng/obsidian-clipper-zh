@@ -113,10 +113,11 @@ interface StorageData {
 	migrationVersion?: number;
 }
 
-const CURRENT_MIGRATION_VERSION = 1;
+const CURRENT_MIGRATION_VERSION = 2;
 
 export async function loadSettings(): Promise<Settings> {
 	const data = await browser.storage.sync.get(null) as StorageData;
+	const previousMigrationVersion = data.migrationVersion || 0;
 	
 	// Load default settings first
 	const defaultSettings: Settings = {
@@ -221,7 +222,9 @@ export async function loadSettings(): Promise<Settings> {
 			enableVideoTemplate: data.video_clipping_settings?.enableVideoTemplate ?? defaultSettings.videoClipping.enableVideoTemplate,
 			includeTranscript: data.video_clipping_settings?.includeTranscript ?? defaultSettings.videoClipping.includeTranscript,
 			includeSummary: data.video_clipping_settings?.includeSummary ?? defaultSettings.videoClipping.includeSummary,
-			includeDownloadCommand: data.video_clipping_settings?.includeDownloadCommand ?? defaultSettings.videoClipping.includeDownloadCommand,
+			includeDownloadCommand: previousMigrationVersion < 2
+				? true
+				: data.video_clipping_settings?.includeDownloadCommand ?? defaultSettings.videoClipping.includeDownloadCommand,
 			downloadCommandTemplate: data.video_clipping_settings?.downloadCommandTemplate || defaultSettings.videoClipping.downloadCommandTemplate,
 		},
 		stats: data.stats || defaultSettings.stats,

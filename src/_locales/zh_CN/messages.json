@@ -1070,7 +1070,7 @@
 		"message": "包含下载命令"
 	},
 	"videoDownloadCommandDescription": {
-		"message": "把外部下载工具命令写入笔记。Web Clipper 不会执行命令，也不会直接下载平台视频流。"
+		"message": "默认把外部下载工具命令写入视频笔记。你可以复制命令到终端执行；Web Clipper 不会自动执行本地命令或内置下载器。"
 	},
 	"videoDownloadCommandTemplate": {
 		"message": "下载命令模板"
