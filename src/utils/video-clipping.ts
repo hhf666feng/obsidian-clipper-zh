@@ -35,7 +35,8 @@ export interface VideoProvider {
 }
 
 export const DEFAULT_VIDEO_DOWNLOAD_COMMAND_TEMPLATE = 'yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"';
-export const DEFAULT_VIDEO_AUTO_DOWNLOAD_DIRECTORY = '~/Downloads/Obsidian Web Clipper Videos';
+export const LEGACY_VIDEO_AUTO_DOWNLOAD_DIRECTORY = '~/Downloads/Obsidian Web Clipper Videos';
+export const DEFAULT_VIDEO_AUTO_DOWNLOAD_DIRECTORY = '{{vaultRoot}}/99-Assets/{{path}}';
 export const DEFAULT_VIDEO_AUTO_DOWNLOAD_EXECUTABLE = 'yt-dlp';
 
 export const DEFAULT_VIDEO_CLIPPING_SETTINGS: VideoClippingSettings = {

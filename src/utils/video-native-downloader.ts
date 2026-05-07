@@ -3,6 +3,7 @@ import { VideoClippingSettings } from '../types/types';
 import {
 	DEFAULT_NATIVE_VIDEO_DOWNLOADER_HOST,
 	VideoDownloadRequest,
+	VideoDownloadContext,
 	buildVideoDownloadRequest,
 } from './video-download-request';
 
@@ -17,8 +18,9 @@ export interface VideoDownloadResponse {
 export async function startNativeVideoDownload(
 	variables: Record<string, string>,
 	settings: VideoClippingSettings,
+	context: VideoDownloadContext = {},
 ): Promise<VideoDownloadResponse | null> {
-	const request = buildVideoDownloadRequest(variables, settings);
+	const request = buildVideoDownloadRequest(variables, settings, context);
 	if (!request) {
 		return null;
 	}

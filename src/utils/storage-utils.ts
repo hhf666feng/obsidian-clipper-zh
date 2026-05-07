@@ -2,7 +2,7 @@ import browser from './browser-polyfill';
 import { Settings, ModelConfig, PropertyType, HistoryEntry, Provider, Rating } from '../types/types';
 import { debugLog } from './debug';
 import { copyToClipboard } from 'core/popup';
-import { DEFAULT_VIDEO_CLIPPING_SETTINGS } from './video-clipping';
+import { DEFAULT_VIDEO_CLIPPING_SETTINGS, LEGACY_VIDEO_AUTO_DOWNLOAD_DIRECTORY } from './video-clipping';
 
 export type { Settings, ModelConfig, PropertyType, HistoryEntry, Provider, Rating };
 
@@ -113,7 +113,7 @@ interface StorageData {
 	migrationVersion?: number;
 }
 
-const CURRENT_MIGRATION_VERSION = 3;
+const CURRENT_MIGRATION_VERSION = 4;
 
 export async function loadSettings(): Promise<Settings> {
 	const data = await browser.storage.sync.get(null) as StorageData;
@@ -229,7 +229,11 @@ export async function loadSettings(): Promise<Settings> {
 			autoDownload: previousMigrationVersion < 3
 				? true
 				: data.video_clipping_settings?.autoDownload ?? defaultSettings.videoClipping.autoDownload,
-			autoDownloadDirectory: data.video_clipping_settings?.autoDownloadDirectory || defaultSettings.videoClipping.autoDownloadDirectory,
+			autoDownloadDirectory: previousMigrationVersion < 4
+				&& (!data.video_clipping_settings?.autoDownloadDirectory
+					|| data.video_clipping_settings.autoDownloadDirectory === LEGACY_VIDEO_AUTO_DOWNLOAD_DIRECTORY)
+				? defaultSettings.videoClipping.autoDownloadDirectory
+				: data.video_clipping_settings?.autoDownloadDirectory || defaultSettings.videoClipping.autoDownloadDirectory,
 			autoDownloadExecutable: data.video_clipping_settings?.autoDownloadExecutable || defaultSettings.videoClipping.autoDownloadExecutable,
 		},
 		stats: data.stats || defaultSettings.stats,

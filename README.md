@@ -41,7 +41,7 @@ Web Clipper 会在提取内容前规范化懒加载图片。对于把真实图�
 
 对于 B 站、抖音、YouTube 视频页，Web Clipper 会自动选中内置“视频剪切”模板，并注入 `{{videoTitle}}`、`{{videoAuthor}}`、`{{videoPublished}}`、`{{videoCover}}`、`{{videoDescription}}`、`{{videoSummary}}`、`{{videoTranscript}}`、`{{videoPlatform}}`、`{{videoDownloadCommand}}` 等变量。摘要默认基于简介或字幕前段生成，不调用外部 AI；如果你已经配置了解释器，也可以继续在模板中使用提示变量生成 AI 摘要。
 
-自动视频下载默认开启。浏览器扩展本身不能直接启动本地程序，所以本版本提供 `native-downloader` 本机助手：安装一次助手并安装 `yt-dlp` 后，剪切视频页会在保存笔记后自动发送下载任务，助手会在后台调用 `yt-dlp` 把视频保存到本地，默认目录是 `~/Downloads/Obsidian Web Clipper Videos`。笔记里仍会保留 `yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"` 这类下载命令，方便审计和手动重跑。
+自动视频下载默认开启。浏览器扩展本身不能直接启动本地程序，所以本版本提供 `native-downloader` 本机助手：安装一次助手并安装 `yt-dlp` 后，剪切视频页会在保存笔记时自动发送下载任务，助手会在后台调用 `yt-dlp` 把视频保存到本地，默认目录模板是 `{{vaultRoot}}/99-Assets/{{path}}`。本机助手会从 Obsidian 本机配置解析 `vaultRoot`；例如知识库路径是 `/Users/admin/Documents/Obsidian Vault`，笔记保存到 `Clippings/Videos` 时，视频会落到 `/Users/admin/Documents/Obsidian Vault/99-Assets/Clippings/Videos`。笔记里仍会保留 `yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"` 这类下载命令，方便审计和手动重跑。
 
 ### 启用自动视频下载
 
