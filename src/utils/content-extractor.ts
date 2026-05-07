@@ -50,6 +50,7 @@ interface ContentResponse {
 	extractedContent: ExtractedContent;
 	schemaOrgData: any;
 	fullHtml: string;
+	rawHtml?: string;
 	highlights: AnyHighlightData[];
 	title: string;
 	author: string;
@@ -132,6 +133,7 @@ export async function initializePageContent(
 	currentUrl: string,
 	schemaOrgData: any,
 	fullHtml: string,
+	rawHtml: string | undefined,
 	highlights: AnyHighlightData[],
 	title: string,
 	author: string,
@@ -173,6 +175,7 @@ export async function initializePageContent(
 			contentHtml: content,
 			url: currentUrl,
 			fullHtml,
+			rawHtml,
 			description,
 			favicon,
 			image,

@@ -19,6 +19,7 @@ export interface BuildVariablesParams {
 	contentHtml: string;
 	url: string;
 	fullHtml: string;
+	rawHtml?: string;
 	description: string;
 	favicon: string;
 	image: string;
@@ -84,7 +85,7 @@ export function buildVariables(params: BuildVariablesParams): Record<string, str
 		schemaOrgData: params.schemaOrgData,
 		metaTags: params.metaTags,
 		extractedContent: params.extractedContent,
-		fullHtml: params.fullHtml,
+		fullHtml: params.rawHtml || params.fullHtml,
 	});
 	Object.assign(variables, buildVideoVariables(video, {
 		...DEFAULT_VIDEO_CLIPPING_SETTINGS,

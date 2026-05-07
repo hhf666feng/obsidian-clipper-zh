@@ -13,6 +13,7 @@ import { debugLog } from './utils/debug';
 import { updateSidebarWidth, addResizeHandle, cleanupResizeHandlers } from './utils/iframe-resize';
 import { parseForClip } from './utils/clip-utils';
 import { normalizeLazyLoadedImages } from './utils/lazy-images';
+import { detectVideoPlatform } from './utils/video-clipping';
 
 declare global {
 	interface Window {
@@ -94,6 +95,7 @@ declare global {
 		extractedContent: { [key: string]: string };
 		schemaOrgData: any;
 		fullHtml: string;
+		rawHtml?: string;
 		highlights: string[];
 		title: string;
 		description: string;
@@ -227,10 +229,12 @@ declare global {
 					...defuddled.variables,
 				};
 
+				const rawHtml = detectVideoPlatform(document.URL) ? document.documentElement.outerHTML : undefined;
+
 				// Create a new DOMParser
 				const parser = new DOMParser();
 				// Parse the document's HTML
-				const doc = parser.parseFromString(document.documentElement.outerHTML, 'text/html');
+				const doc = parser.parseFromString(rawHtml || document.documentElement.outerHTML, 'text/html');
 				normalizeLazyLoadedImages(doc, document.baseURI);
 
 				// Remove all script and style elements
@@ -278,6 +282,7 @@ declare global {
 					extractedContent: extractedContent,
 					favicon: defuddled.favicon,
 					fullHtml: cleanedHtml,
+					rawHtml,
 					highlights: highlighter.getHighlights(),
 					image: defuddled.image,
 					language: defuddled.language || '',
