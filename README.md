@@ -1,123 +1,124 @@
-## Fork-specific changes
+## 版本差异说明
 
-This fork differs from the official [Obsidian Web Clipper](https://github.com/obsidianmd/obsidian-clipper) main version by adding support for WeChat official account articles that lazy-load images through `data-src` and `data-srcset`. The clipping pipeline normalizes those image URLs before extraction so Obsidian's local image saving can download the original article images instead of placeholders or WeChat runtime lazy-load URLs. This fork also includes a Simplified Chinese README.
+这是基于官方 [Obsidian Web Clipper](https://github.com/obsidianmd/obsidian-clipper) 的 fork 版本。相比官方主版本，本版本增加了对微信公众号文章懒加载图片的处理：在内容提取前，会把 `data-src`、`data-srcset` 等属性中的真实图片地址规范化到图片节点上，让 Obsidian 本地图片保存能下载原始文章图片，而不是占位图或微信运行时懒加载地址。本版本默认使用简体中文 README，并保留英文 README。
 
-Languages: [English](README.md) | [Simplified Chinese](README.zh-CN.md)
+语言：简体中文 | [English](README.en.md)
 
-Obsidian Web Clipper helps you highlight and capture the web in your favorite browser. Anything you save is stored as durable Markdown files that you can read offline, and preserve for the long term.
+Obsidian Web Clipper 可帮助你在常用浏览器中高亮并裁剪网页。保存的内容会以耐久的 Markdown 文件形式存入你的 Obsidian 仓库，方便离线阅读和长期保存。
 
-- **[Download Web Clipper](https://obsidian.md/clipper)**
-- **[Documentation](https://help.obsidian.md/web-clipper)**
-- **[Troubleshooting](https://help.obsidian.md/web-clipper/troubleshoot)**
+- **[下载 Web Clipper](https://obsidian.md/clipper)**
+- **[使用文档](https://help.obsidian.md/web-clipper)**
+- **[故障排查](https://help.obsidian.md/web-clipper/troubleshoot)**
 
-## Get started
+## 快速开始
 
-Install the extension by downloading it from the official directory for your browser:
+请从对应浏览器的官方扩展商店安装：
 
-- **[Chrome Web Store](https://chromewebstore.google.com/detail/obsidian-web-clipper/cnjifjpddelmedmihgijeibhnjfabmlf)** for Chrome, Brave, Arc, Orion, and other Chromium-based browsers.
-- **[Firefox Add-Ons](https://addons.mozilla.org/en-US/firefox/addon/web-clipper-obsidian/)** for Firefox and Firefox Mobile.
-- **[Safari Extensions](https://apps.apple.com/us/app/obsidian-web-clipper/id6720708363)** for macOS, iOS, and iPadOS.
-- **[Edge Add-Ons](https://microsoftedge.microsoft.com/addons/detail/obsidian-web-clipper/eigdjhmgnaaeaonimdklocfekkaanfme)** for Microsoft Edge.
+- **[Chrome Web Store](https://chromewebstore.google.com/detail/obsidian-web-clipper/cnjifjpddelmedmihgijeibhnjfabmlf)**：适用于 Chrome、Brave、Arc、Orion 以及其他基于 Chromium 的浏览器。
+- **[Firefox Add-Ons](https://addons.mozilla.org/en-US/firefox/addon/web-clipper-obsidian/)**：适用于 Firefox 和 Firefox Mobile。
+- **[Safari Extensions](https://apps.apple.com/us/app/obsidian-web-clipper/id6720708363)**：适用于 macOS、iOS 和 iPadOS。
+- **[Edge Add-Ons](https://microsoftedge.microsoft.com/addons/detail/obsidian-web-clipper/eigdjhmgnaaeaonimdklocfekkaanfme)**：适用于 Microsoft Edge。
 
-## Use the extension
+## 使用扩展
 
-Documentation is available on the [Obsidian Help site](https://help.obsidian.md/web-clipper), which covers how to use [highlighting](https://help.obsidian.md/web-clipper/highlight), [templates](https://help.obsidian.md/web-clipper/templates), [variables](https://help.obsidian.md/web-clipper/variables), [filters](https://help.obsidian.md/web-clipper/filters), and more.
+详细文档请查看 [Obsidian Help](https://help.obsidian.md/web-clipper)。文档覆盖了 [高亮](https://help.obsidian.md/web-clipper/highlight)、[模板](https://help.obsidian.md/web-clipper/templates)、[变量](https://help.obsidian.md/web-clipper/variables)、[过滤器](https://help.obsidian.md/web-clipper/filters) 等功能。
 
-Web Clipper also normalizes lazy-loaded images before extracting content. This helps pages that keep their real image URLs in attributes such as `data-src` or `data-srcset`, including WeChat official account articles, so image capture and Obsidian's local image saving use the original image URLs instead of placeholders or runtime lazy-load URLs.
+Web Clipper 会在提取内容前规范化懒加载图片。对于把真实图片地址放在 `data-src`、`data-srcset` 等属性中的网页，包括微信公众号文章，图片裁剪和 Obsidian 本地图片保存会优先使用原始图片地址，而不是占位图或运行时懒加载地址。
 
-## Contribute
+## 贡献
 
-### Translations
+### 翻译
 
-You can help translate Web Clipper into your language. Submit your translation via pull request using the format found in the [/_locales](/src/_locales) folder.
+你可以帮助把 Web Clipper 翻译成更多语言。请参考 [/_locales](/src/_locales) 目录中的格式，通过 pull request 提交翻译。
 
-### Features and bug fixes
+### 功能和 bug 修复
 
-See the [help wanted](https://github.com/obsidianmd/obsidian-clipper/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) tag for issues where contributions are welcome.
+欢迎查看带有 [help wanted](https://github.com/obsidianmd/obsidian-clipper/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) 标签的 issue，这些是适合社区贡献的任务。
 
-## Roadmap
+## 路线图
 
-In no particular order:
+以下事项没有特定优先级：
 
-- [ ] A separate icon for Web Clipper
-- [ ] Annotate highlights
-- [ ] Template directory
-- [ ] Sync settings across browsers
-- [x] Template validation
-- [x] Template logic (if/for)
-- [x] Save images locally, [added in Obsidian 1.8.0](https://obsidian.md/changelog/2024-12-18-desktop-v1.8.0/)
-- [x] Translate UI into more languages — help is welcomed
+- [ ] 为 Web Clipper 提供独立图标
+- [ ] 标注高亮内容
+- [ ] 模板目录
+- [ ] 跨浏览器同步设置
+- [x] 模板校验
+- [x] 模板逻辑（if/for）
+- [x] 本地保存图片，已在 [Obsidian 1.8.0](https://obsidian.md/changelog/2024-12-18-desktop-v1.8.0/) 中加入
+- [x] 将界面翻译成更多语言，欢迎参与
 
-## Developers
+## 开发者
 
-To build the extension:
+构建扩展：
 
-```
+```sh
 npm run build
 ```
 
-This will create three directories:
-- `dist/` for the Chromium version
-- `dist_firefox/` for the Firefox version
-- `dist_safari/` for the Safari version
+构建完成后会生成三个目录：
 
-### Install the extension locally
+- `dist/`：Chromium 版本
+- `dist_firefox/`：Firefox 版本
+- `dist_safari/`：Safari 版本
 
-For Chromium browsers, such as Chrome, Brave, Edge, and Arc:
+### 本地安装扩展
 
-1. Open your browser and navigate to `chrome://extensions`
-2. Enable **Developer mode**
-3. Click **Load unpacked** and select the `dist` directory
+对于 Chrome、Brave、Edge、Arc 等 Chromium 浏览器：
 
-For Firefox:
+1. 打开浏览器并进入 `chrome://extensions`
+2. 启用 **Developer mode**
+3. 点击 **Load unpacked**，选择 `dist` 目录
 
-1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
-2. Click **Load Temporary Add-on**
-3. Navigate to the `dist_firefox` directory and select the `manifest.json` file
+对于 Firefox：
 
-If you want to run the extension permanently you can do so with the Nightly or Developer versions of Firefox.
+1. 打开 Firefox 并进入 `about:debugging#/runtime/this-firefox`
+2. 点击 **Load Temporary Add-on**
+3. 进入 `dist_firefox` 目录并选择 `manifest.json` 文件
 
-1. Type `about:config` in the URL bar
-2. In the Search box type `xpinstall.signatures.required`
-3. Double-click the preference, or right-click and select "Toggle", to set it to `false`.
-4. Go to `about:addons` > gear icon > **Install Add-on From File…**
+如果想长期运行这个扩展，可以使用 Firefox Nightly 或 Firefox Developer 版本：
 
-For iOS Simulator testing on macOS:
+1. 在地址栏输入 `about:config`
+2. 在搜索框中输入 `xpinstall.signatures.required`
+3. 双击该配置项，或右键选择 "Toggle"，将其设置为 `false`
+4. 进入 `about:addons` > 齿轮图标 > **Install Add-on From File…**
 
-1. Run `npm run build` to build the extension
-2. Open `xcode/Obsidian Web Clipper/Obsidian Web Clipper.xcodeproj` in Xcode
-3. Select the **Obsidian Web Clipper (iOS)** scheme from the scheme selector
-4. Choose an iOS Simulator device and click **Run** to build and launch the app
-5. Once the app is running on the simulator, open **Safari**
-6. Navigate to a webpage and tap the **Extensions** button in Safari to access the Web Clipper extension
+在 macOS 上测试 iOS Simulator：
 
-### Run tests
+1. 运行 `npm run build` 构建扩展
+2. 在 Xcode 中打开 `xcode/Obsidian Web Clipper/Obsidian Web Clipper.xcodeproj`
+3. 在 scheme 选择器中选择 **Obsidian Web Clipper (iOS)**
+4. 选择一个 iOS Simulator 设备并点击 **Run** 构建和启动应用
+5. 应用在模拟器中运行后，打开 **Safari**
+6. 打开任意网页，点击 Safari 中的 **Extensions** 按钮即可访问 Web Clipper 扩展
 
-```
+### 运行测试
+
+```sh
 npm test
 ```
 
-Or run in watch mode during development:
+开发时也可以使用 watch 模式：
 
-```
+```sh
 npm run test:watch
 ```
 
-When changing content extraction or image handling, run the focused regression tests:
+修改内容提取或图片处理逻辑时，请运行聚焦的回归测试：
 
-```
+```sh
 npx vitest run src/api.test.ts src/utils/lazy-images.test.ts src/utils/filters/image.test.ts
 ```
 
-## Third-party libraries
+## 第三方库
 
-- [webextension-polyfill](https://github.com/mozilla/webextension-polyfill) for browser compatibility
-- [defuddle](https://github.com/kepano/defuddle) for content extraction and Markdown conversion
-- [dayjs](https://github.com/iamkun/dayjs) for date parsing and formatting
-- [lz-string](https://github.com/pieroxy/lz-string) to compress templates to reduce storage space
-- [lucide](https://github.com/lucide-icons/lucide) for icons
-- [dompurify](https://github.com/cure53/DOMPurify) for sanitizing HTML
+- [webextension-polyfill](https://github.com/mozilla/webextension-polyfill)：浏览器兼容
+- [defuddle](https://github.com/kepano/defuddle)：内容提取和 Markdown 转换
+- [dayjs](https://github.com/iamkun/dayjs)：日期解析和格式化
+- [lz-string](https://github.com/pieroxy/lz-string)：压缩模板，减少存储占用
+- [lucide](https://github.com/lucide-icons/lucide)：图标
+- [dompurify](https://github.com/cure53/DOMPurify)：HTML 清理和消毒
 
-## License
+## 许可证
 
-Obsidian Web Clipper source code is open source under the MIT License. All trademarks, icons, marketing copy, and other marketing assets are excluded from that license.
+Obsidian Web Clipper 源代码基于 MIT License 开源。商标、图标、营销文案以及其他营销资产不包含在该许可证范围内。
