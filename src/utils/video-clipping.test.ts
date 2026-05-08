@@ -17,6 +17,7 @@ describe('video clipping', () => {
 		expect(detectVideoPlatform('https://www.youtube.com/watch?v=abc123')).toBe('youtube');
 		expect(detectVideoPlatform('https://m.youtube.com/watch?v=abc123')).toBe('youtube');
 		expect(detectVideoPlatform('https://www.youtube.com/shorts/abc123')).toBe('youtube');
+		expect(detectVideoPlatform('https://www.youtube.com/live/abc123?si=share')).toBe('youtube');
 		expect(detectVideoPlatform('https://example.com/articles/video')).toBe('');
 	});
 
@@ -453,6 +454,93 @@ describe('video clipping', () => {
 		expect(data?.summary).not.toContain('记录美好生活');
 	});
 
+	test('extracts YouTube video data from player response and canonicalizes shorts URLs', () => {
+		const data = extractVideoClipData({
+			url: 'https://www.youtube.com/shorts/abc123?feature=share',
+			title: 'Fallback title - YouTube',
+			author: '',
+			description: '',
+			image: '',
+			published: '',
+			schemaOrgData: null,
+			metaTags: [],
+			extractedContent: {},
+			fullHtml: `
+				<html>
+					<head>
+						<script>
+							var ytInitialPlayerResponse = {
+								"videoDetails": {
+									"videoId": "abc123",
+									"title": "How to Build a CLI Tool",
+									"author": "Tech Channel",
+									"shortDescription": "A tutorial on building CLI tools with Node.js",
+									"thumbnail": {
+										"thumbnails": [
+											{ "url": "https://i.ytimg.com/vi/abc123/hqdefault.jpg", "width": 480 },
+											{ "url": "https://i.ytimg.com/vi/abc123/maxresdefault.jpg", "width": 1280 }
+										]
+									}
+								},
+								"microformat": {
+									"playerMicroformatRenderer": {
+										"ownerChannelName": "Tech Channel Official",
+										"publishDate": "2024-06-15",
+										"description": { "simpleText": "Detailed CLI tutorial description" },
+										"thumbnail": {
+											"thumbnails": [
+												{ "url": "https://i.ytimg.com/vi/abc123/sddefault.jpg", "width": 640 }
+											]
+										}
+									}
+								}
+							};
+						</script>
+					</head>
+				</html>
+			`,
+		});
+
+		expect(data).toMatchObject({
+			platform: 'youtube',
+			title: 'How to Build a CLI Tool',
+			author: 'Tech Channel',
+			description: 'A tutorial on building CLI tools with Node.js',
+			cover: 'https://i.ytimg.com/vi/abc123/maxresdefault.jpg',
+			url: 'https://www.youtube.com/watch?v=abc123',
+		});
+		expect(data?.published).toBe('2024-06-14T16:00:00.000Z');
+		expect(data?.summary).toBe('A tutorial on building CLI tools with Node.js');
+	});
+
+	test('extracts clean YouTube data from meta fallbacks and youtu.be URLs', () => {
+		const data = extractVideoClipData({
+			url: 'https://youtu.be/abc123?si=share',
+			title: 'How to Build a CLI Tool - YouTube',
+			author: '',
+			description: 'A tutorial on building CLI tools with Node.js',
+			image: '',
+			published: '',
+			schemaOrgData: null,
+			metaTags: [
+				{ property: 'og:title', content: 'How to Build a CLI Tool - YouTube' },
+				{ property: 'og:image', content: 'https://i.ytimg.com/vi/abc123/maxresdefault.jpg' },
+				{ name: 'author', content: 'Tech Channel' },
+			],
+			extractedContent: {},
+			fullHtml: '<html><head><title>How to Build a CLI Tool - YouTube</title></head></html>',
+		});
+
+		expect(data).toMatchObject({
+			platform: 'youtube',
+			title: 'How to Build a CLI Tool',
+			author: 'Tech Channel',
+			description: 'A tutorial on building CLI tools with Node.js',
+			cover: 'https://i.ytimg.com/vi/abc123/maxresdefault.jpg',
+			url: 'https://www.youtube.com/watch?v=abc123',
+		});
+	});
+
 	test('injects video variables and includes download command by default', () => {
 		const variables = buildVariables({
 			title: 'How to Build a CLI Tool',
@@ -582,6 +670,7 @@ describe('video clipping', () => {
 			'https://www.bilibili.com/video/',
 			'https://www.douyin.com/video/',
 			'https://www.youtube.com/watch',
+			'https://www.youtube.com/live/',
 		]));
 		expect(template.noteContentFormat).toContain('{{videoTranscript}}');
 		expect(template.noteContentFormat).toContain('{{videoDownloadCommand}}');

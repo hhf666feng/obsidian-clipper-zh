@@ -182,4 +182,52 @@ describe('clip', () => {
 		expect(result.content).toContain('真正的抖音视频文案 #AI工具');
 		expect(result.content).toContain('yt-dlp "https://www.douyin.com/video/7340000000000000000" -o "真正的抖音视频文案 #AI工具.%(ext)s"');
 	});
+
+	test('renders YouTube video clipping variables through the API template path', async () => {
+		const { clip } = await import('./api');
+		const { createVideoClipTemplate } = await import('./utils/video-clipping');
+
+		const result = await clip({
+			html: `
+				<html>
+					<head>
+						<title>Fallback title - YouTube</title>
+						<script>
+							var ytInitialPlayerResponse = {
+								"videoDetails": {
+									"videoId": "abc123",
+									"title": "How to Build a CLI Tool",
+									"author": "Tech Channel",
+									"shortDescription": "A tutorial on building CLI tools with Node.js",
+									"thumbnail": {
+										"thumbnails": [
+											{ "url": "https://i.ytimg.com/vi/abc123/hqdefault.jpg", "width": 480 },
+											{ "url": "https://i.ytimg.com/vi/abc123/maxresdefault.jpg", "width": 1280 }
+										]
+									}
+								},
+								"microformat": {
+									"playerMicroformatRenderer": {
+										"publishDate": "2024-06-15"
+									}
+								}
+							};
+						</script>
+					</head>
+					<body><main>YouTube video page shell</main></body>
+				</html>
+			`,
+			url: 'https://www.youtube.com/shorts/abc123?feature=share',
+			template: createVideoClipTemplate(),
+			documentParser,
+		});
+
+		expect(result.noteName).toBe('Tech Channel - How to Build a CLI Tool');
+		expect(result.frontmatter).toContain('platform: "youtube"');
+		expect(result.frontmatter).toContain('source: "https://www.youtube.com/watch?v=abc123"');
+		expect(result.frontmatter).toContain('cover: "https://i.ytimg.com/vi/abc123/maxresdefault.jpg"');
+		expect(result.content).toContain('![How to Build a CLI Tool](https://i.ytimg.com/vi/abc123/maxresdefault.jpg)');
+		expect(result.content).toContain('A tutorial on building CLI tools with Node.js');
+		expect(result.content).toContain('yt-dlp "https://www.youtube.com/watch?v=abc123" -o "How to Build a CLI Tool.%(ext)s"');
+	});
 });

@@ -87,10 +87,10 @@ export const VIDEO_PROVIDER_REGISTRY: VideoProvider[] = [
 		platform: 'youtube',
 		matches: (url) => {
 			const host = normalizedHost(url);
-			return ((host === 'youtube.com' || host === 'm.youtube.com') && (url.pathname === '/watch' || url.pathname.startsWith('/shorts/')))
+			return ((host === 'youtube.com' || host === 'm.youtube.com') && (url.pathname === '/watch' || url.pathname.startsWith('/shorts/') || url.pathname.startsWith('/live/')))
 				|| host === 'youtu.be';
 		},
-		extract: () => ({}),
+		extract: extractYouTubeVideo,
 	},
 ];
 
@@ -820,6 +820,91 @@ function extractDouyinVideo(input: VideoClipExtractionInput): Partial<VideoClipD
 	};
 }
 
+function youtubeVideoIdFromUrl(urlValue: string): string {
+	try {
+		const url = new URL(urlValue);
+		const host = normalizedHost(url);
+		if (host === 'youtu.be') {
+			return url.pathname.split('/').filter(Boolean)[0] || '';
+		}
+		if (url.pathname.startsWith('/shorts/')) {
+			return url.pathname.split('/').filter(Boolean)[1] || '';
+		}
+		if (url.pathname.startsWith('/live/')) {
+			return url.pathname.split('/').filter(Boolean)[1] || '';
+		}
+		return url.searchParams.get('v') || '';
+	} catch {
+		return '';
+	}
+}
+
+function youtubeCanonicalUrl(input: VideoClipExtractionInput, playerResponse: any): string {
+	const videoId = firstValueAtPath(playerResponse, [
+		['videoDetails', 'videoId'],
+		['microformat', 'playerMicroformatRenderer', 'externalId'],
+	]) || youtubeVideoIdFromUrl(input.url);
+	return videoId ? `https://www.youtube.com/watch?v=${videoId}` : '';
+}
+
+function youtubeTextValue(value: any): string {
+	if (Array.isArray(value?.runs)) {
+		return value.runs.map((run: any) => firstValue(run.text)).join('').trim();
+	}
+	return firstValue(value?.simpleText || value);
+}
+
+function bestYouTubeThumbnail(value: any, baseUrl: string): string {
+	const thumbnails: any[] = Array.isArray(value?.thumbnails) ? value.thumbnails : [];
+	type YouTubeThumbnailCandidate = { url: string; score: number };
+	return thumbnails
+		.map((thumbnail: any): YouTubeThumbnailCandidate => ({
+			url: normalizeUrl(firstValue(thumbnail?.url), baseUrl),
+			score: Number(thumbnail?.width || 0) * Number(thumbnail?.height || 1),
+		}))
+		.filter((thumbnail: YouTubeThumbnailCandidate) => thumbnail.url)
+		.sort((a: YouTubeThumbnailCandidate, b: YouTubeThumbnailCandidate) => b.score - a.score)[0]?.url || '';
+}
+
+function cleanYouTubeTitle(value: string): string {
+	return decodePossiblyEncodedText(decodeHtmlEntities(value))
+		.replace(/\s+-\s+YouTube$/i, '')
+		.trim();
+}
+
+function extractYouTubeVideo(input: VideoClipExtractionInput): Partial<VideoClipData> {
+	const playerResponse = extractJsonAssignment(input.fullHtml || '', 'ytInitialPlayerResponse') || {};
+	const videoDetails = playerResponse.videoDetails || {};
+	const microformat = playerResponse.microformat?.playerMicroformatRenderer || {};
+	const schemaData = extractSchemaVideo(input);
+	const description = youtubeTextValue(videoDetails.shortDescription)
+		|| youtubeTextValue(microformat.description)
+		|| schemaData.description
+		|| metaContent(input.metaTags, 'og:description')
+		|| input.description;
+	return {
+		title: cleanYouTubeTitle(youtubeTextValue(videoDetails.title)
+			|| youtubeTextValue(microformat.title)
+			|| schemaData.title
+			|| metaContent(input.metaTags, 'og:title')
+			|| input.title),
+		author: youtubeTextValue(videoDetails.author)
+			|| youtubeTextValue(microformat.ownerChannelName)
+			|| schemaData.author
+			|| metaContent(input.metaTags, 'author')
+			|| input.author,
+		published: normalizeDate(microformat.publishDate || microformat.uploadDate)
+			|| schemaData.published
+			|| normalizeDate(input.published),
+		cover: bestYouTubeThumbnail(videoDetails.thumbnail, input.url)
+			|| bestYouTubeThumbnail(microformat.thumbnail, input.url)
+			|| schemaData.cover
+			|| normalizeUrl(metaContent(input.metaTags, 'og:image') || input.image, input.url),
+		description,
+		url: youtubeCanonicalUrl(input, playerResponse),
+	};
+}
+
 function summaryFrom(description: string, transcript: string): string {
 	const source = (description || transcript || '').replace(/\s+/g, ' ').trim();
 	return source.length > 240 ? `${source.slice(0, 240).trim()}...` : source;
@@ -994,6 +1079,9 @@ export function createVideoClipTemplate(): Template {
 			'https://youtube.com/shorts/',
 			'https://www.youtube.com/shorts/',
 			'https://m.youtube.com/shorts/',
+			'https://youtube.com/live/',
+			'https://www.youtube.com/live/',
+			'https://m.youtube.com/live/',
 			'https://youtu.be/',
 		],
 	};
