@@ -7,6 +7,7 @@ export const DEFAULT_FOLDER_ROUTING_SETTINGS: FolderRoutingSettings = {
 	rules: [
 		{ patternType: 'domain', pattern: 'mp.weixin.qq.com', path: 'Clippings/微信公众号' },
 		{ patternType: 'domain', pattern: 'bilibili.com', path: 'Clippings/哔哩哔哩' },
+		{ patternType: 'domain', pattern: 'douyin.com', path: 'Clippings/抖音' },
 		{ patternType: 'domain', pattern: 'youtube.com', path: 'Clippings/YouTube' },
 		{ patternType: 'domain', pattern: 'youtu.be', path: 'Clippings/YouTube' },
 	],

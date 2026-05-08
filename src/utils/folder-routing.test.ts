@@ -11,6 +11,8 @@ describe('folder routing', () => {
 		expect(resolveFolderPathForUrl('https://mp.weixin.qq.com/s/example', DEFAULT_FOLDER_ROUTING_SETTINGS, 'Clippings')).toBe('Clippings/微信公众号');
 		expect(resolveFolderPathForUrl('https://www.bilibili.com/video/BV123', DEFAULT_FOLDER_ROUTING_SETTINGS, 'Clippings/Videos')).toBe('Clippings/哔哩哔哩');
 		expect(resolveFolderPathForUrl('https://m.youtube.com/watch?v=abc', DEFAULT_FOLDER_ROUTING_SETTINGS, 'Clippings/Videos')).toBe('Clippings/YouTube');
+		expect(resolveFolderPathForUrl('https://www.douyin.com/video/7625484359843319083', DEFAULT_FOLDER_ROUTING_SETTINGS, 'Clippings/Videos')).toBe('Clippings/抖音');
+		expect(resolveFolderPathForUrl('https://v.douyin.com/iExample/', DEFAULT_FOLDER_ROUTING_SETTINGS, 'Clippings/Videos')).toBe('Clippings/抖音');
 	});
 
 	test('uses the configured default folder while preserving explicit template folders', () => {
