@@ -6,6 +6,7 @@ import { debounce } from './utils/debounce';
 import { Settings } from './types/types';
 import { debugLog } from './utils/debug';
 import { detectVideoPlatform, findBestScopedVideoDownloadUrl } from './utils/video-clipping';
+import { shouldRegisterYouTubeInnertubeWebRequestFallback } from './utils/youtube-innertube-headers';
 
 const YOUTUBE_EMBED_RULE_ID = 9001;
 const YOUTUBE_INNERTUBE_RULE_ID = 9002;
@@ -44,8 +45,7 @@ async function disableYouTubeEmbedRule(): Promise<void> {
 // Set Origin header on YouTube innertube API requests from the extension.
 // YouTube doesn't accept chrome-extension://...
 async function enableYouTubeInnertubeRule(): Promise<void> {
-	const dnr = (typeof chrome !== 'undefined' && chrome.declarativeNetRequest)
-		|| (typeof browser !== 'undefined' && (browser as any).declarativeNetRequest);
+	const dnr = youtubeDeclarativeNetRequestApi();
 	if (!dnr) return;
 	try {
 		await dnr.updateSessionRules({
@@ -70,12 +70,35 @@ async function enableYouTubeInnertubeRule(): Promise<void> {
 	} catch { /* Firefox/Safari use webRequest or native messaging instead */ }
 }
 
-// Firefox/Safari: use webRequest.onBeforeSendHeaders to set Origin/Referer on
-// YouTube innertube requests. Fallback for browsers where declarativeNetRequest
-// doesn't work or isn't supported.
-if (typeof browser !== 'undefined' && browser.webRequest?.onBeforeSendHeaders) {
+function youtubeDeclarativeNetRequestApi(): any {
+	return (typeof chrome !== 'undefined' && chrome.declarativeNetRequest)
+		|| (typeof browser !== 'undefined' && (browser as any).declarativeNetRequest);
+}
+
+function manifestPermissions(): string[] {
 	try {
-		browser.webRequest.onBeforeSendHeaders.addListener(
+		return (browser.runtime.getManifest?.().permissions || []) as string[];
+	} catch {
+		return [];
+	}
+}
+
+// Firefox: use webRequest.onBeforeSendHeaders to set Origin/Referer on
+// YouTube innertube requests. Chrome MV3 cannot use blocking webRequest
+// listeners unless enterprise-installed, so only register this fallback when
+// the browser-specific manifest declares webRequestBlocking.
+function registerYouTubeInnertubeWebRequestFallback(): void {
+	const onBeforeSendHeaders = browser.webRequest?.onBeforeSendHeaders;
+	if (!shouldRegisterYouTubeInnertubeWebRequestFallback({
+		hasDeclarativeNetRequest: Boolean(youtubeDeclarativeNetRequestApi()),
+		hasOnBeforeSendHeaders: Boolean(onBeforeSendHeaders),
+		permissions: manifestPermissions(),
+	})) {
+		return;
+	}
+
+	try {
+		onBeforeSendHeaders!.addListener(
 			(details) => {
 				// Only modify requests from tabs showing extension pages
 				if (details.tabId && details.tabId > 0) {
@@ -355,6 +378,7 @@ async function initialize() {
 
 		// Enable Origin header for YouTube innertube API requests
 		await enableYouTubeInnertubeRule();
+		registerYouTubeInnertubeWebRequestFallback();
 
 		// Set up action popup based on openBehavior setting
 		await updateActionPopup();
