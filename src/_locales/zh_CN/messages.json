@@ -1063,6 +1063,9 @@
 			}
 		}
 	},
+	"videoClipping": {
+		"message": "视频剪切"
+	},
 	"folderRouting": {
 		"message": "目录路由"
 	},
@@ -1078,20 +1081,71 @@
 	"folderRoutingRulesDescription": {
 		"message": "每行一条规则。可使用“domain:example.com => Clippings/Example”或“regex:^https://example\\\\.com/articles/ => Clippings/Articles”。"
 	},
-	"videoClipping": {
-		"message": "视频剪切"
-	},
 	"videoDownloadCommand": {
 		"message": "包含下载命令"
 	},
 	"videoDownloadCommandDescription": {
-		"message": "默认把外部下载工具命令写入视频笔记。如果 yt-dlp 未安装，内置模板会附带安装指引；Web Clipper 不会自动执行本地命令或内置下载器。"
+		"message": "把外部下载工具命令写入视频笔记，便于审计或手动重跑；自动下载由本机助手单独控制。"
 	},
 	"videoDownloadCommandTemplate": {
 		"message": "下载命令模板"
 	},
 	"videoDownloadCommandTemplateDescription": {
 		"message": "可使用 {{url}}、{{videoTitle}}、{{videoAuthor}}、{{videoPlatform}} 等变量。"
+	},
+	"videoAutoDownload": {
+		"message": "自动下载视频"
+	},
+	"videoAutoDownloadDescription": {
+		"message": "剪切视频后，通过已安装的本机助手在后台启动 yt-dlp 下载。"
+	},
+	"videoAutoDownloadDirectory": {
+		"message": "视频下载目录模板"
+	},
+	"videoAutoDownloadDirectoryDescription": {
+		"message": "默认保存到 {{vaultRoot}}/99-Assets/{{path}}。本机助手会从 Obsidian 配置解析 vaultRoot；也可使用 {{vault}}、{{noteName}} 等变量。"
+	},
+	"videoAutoDownloadExecutable": {
+		"message": "yt-dlp 可执行文件"
+	},
+	"videoAutoDownloadExecutableDescription": {
+		"message": "如果 yt-dlp 已在 PATH 中，可保持默认；也可以填写完整路径。"
+	},
+	"videoAutoDownloadFailed": {
+		"message": "剪切会继续保存，但自动视频下载没有启动。请确认 native-downloader 已用当前扩展 ID 安装，并已安装 yt-dlp。"
+	},
+	"videoCookieBrowser": {
+		"message": "Cookie 来源浏览器"
+	},
+	"videoCookieBrowserDescription": {
+		"message": "仅当无法读取当前浏览器 Cookie 时，作为 yt-dlp --cookies-from-browser 的回退配置。"
+	},
+	"videoCookieFile": {
+		"message": "cookies.txt 文件"
+	},
+	"videoCookieFileDescription": {
+		"message": "仅当 Cookie 来源为 cookies.txt 时使用。支持 ~/Downloads/cookies.txt 这类路径。"
+	},
+	"videoCookieMode": {
+		"message": "登录 Cookie 来源"
+	},
+	"videoCookieModeBrowser": {
+		"message": "使用浏览器 Cookie"
+	},
+	"videoCookieModeDescription": {
+		"message": "默认读取当前浏览器中目标视频站点的 Cookie，交给本机助手写入临时 cookies.txt，下载结束后自动删除；读取不到时再回退到下方浏览器/Profile 配置。"
+	},
+	"videoCookieModeFile": {
+		"message": "使用 cookies.txt 文件"
+	},
+	"videoCookieModeNone": {
+		"message": "不使用 Cookie"
+	},
+	"videoCookieProfile": {
+		"message": "浏览器 Profile"
+	},
+	"videoCookieProfileDescription": {
+		"message": "yt-dlp --cookies-from-browser 的可选回退 Profile。例如 Default、Profile 1。"
 	},
 	"videoSummary": {
 		"message": "包含摘要"

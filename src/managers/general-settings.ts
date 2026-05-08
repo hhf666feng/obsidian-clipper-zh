@@ -264,6 +264,13 @@ function saveSettingsFromForm(): void {
 	const videoSummaryToggle = document.getElementById('video-summary-toggle') as HTMLInputElement;
 	const videoDownloadCommandToggle = document.getElementById('video-download-command-toggle') as HTMLInputElement;
 	const videoDownloadCommandTemplate = document.getElementById('video-download-command-template') as HTMLInputElement;
+	const videoAutoDownloadToggle = document.getElementById('video-auto-download-toggle') as HTMLInputElement;
+	const videoAutoDownloadDirectory = document.getElementById('video-auto-download-directory') as HTMLInputElement;
+	const videoAutoDownloadExecutable = document.getElementById('video-auto-download-executable') as HTMLInputElement;
+	const videoCookieMode = document.getElementById('video-cookie-mode') as HTMLSelectElement;
+	const videoCookieBrowser = document.getElementById('video-cookie-browser') as HTMLSelectElement;
+	const videoCookieProfile = document.getElementById('video-cookie-profile') as HTMLInputElement;
+	const videoCookieFile = document.getElementById('video-cookie-file') as HTMLInputElement;
 	const folderRouting = readFolderRoutingFromForm();
 
 	const updatedSettings = {
@@ -282,6 +289,13 @@ function saveSettingsFromForm(): void {
 			includeSummary: videoSummaryToggle?.checked ?? generalSettings.videoClipping.includeSummary,
 			includeDownloadCommand: videoDownloadCommandToggle?.checked ?? generalSettings.videoClipping.includeDownloadCommand,
 			downloadCommandTemplate: videoDownloadCommandTemplate?.value ?? generalSettings.videoClipping.downloadCommandTemplate,
+			autoDownload: videoAutoDownloadToggle?.checked ?? generalSettings.videoClipping.autoDownload,
+			autoDownloadDirectory: videoAutoDownloadDirectory?.value ?? generalSettings.videoClipping.autoDownloadDirectory,
+			autoDownloadExecutable: videoAutoDownloadExecutable?.value ?? generalSettings.videoClipping.autoDownloadExecutable,
+			cookieMode: (videoCookieMode?.value as Settings['videoClipping']['cookieMode']) ?? generalSettings.videoClipping.cookieMode,
+			cookieBrowser: videoCookieBrowser?.value ?? generalSettings.videoClipping.cookieBrowser,
+			cookieProfile: videoCookieProfile?.value ?? generalSettings.videoClipping.cookieProfile,
+			cookieFile: videoCookieFile?.value ?? generalSettings.videoClipping.cookieFile,
 		},
 		folderRouting,
 	};
@@ -490,11 +504,63 @@ function initializeVideoClippingSettings(): void {
 		saveVideoClippingSettings({ includeDownloadCommand: checked });
 	});
 
+	initializeSettingToggle('video-auto-download-toggle', generalSettings.videoClipping.autoDownload, (checked) => {
+		saveVideoClippingSettings({ autoDownload: checked });
+	});
+
 	const commandTemplateInput = document.getElementById('video-download-command-template') as HTMLInputElement;
 	if (commandTemplateInput) {
 		commandTemplateInput.value = generalSettings.videoClipping.downloadCommandTemplate;
 		commandTemplateInput.addEventListener('input', debounce(() => {
 			saveVideoClippingSettings({ downloadCommandTemplate: commandTemplateInput.value });
+		}, 500));
+	}
+
+	const autoDownloadDirectoryInput = document.getElementById('video-auto-download-directory') as HTMLInputElement;
+	if (autoDownloadDirectoryInput) {
+		autoDownloadDirectoryInput.value = generalSettings.videoClipping.autoDownloadDirectory;
+		autoDownloadDirectoryInput.addEventListener('input', debounce(() => {
+			saveVideoClippingSettings({ autoDownloadDirectory: autoDownloadDirectoryInput.value });
+		}, 500));
+	}
+
+	const autoDownloadExecutableInput = document.getElementById('video-auto-download-executable') as HTMLInputElement;
+	if (autoDownloadExecutableInput) {
+		autoDownloadExecutableInput.value = generalSettings.videoClipping.autoDownloadExecutable;
+		autoDownloadExecutableInput.addEventListener('input', debounce(() => {
+			saveVideoClippingSettings({ autoDownloadExecutable: autoDownloadExecutableInput.value });
+		}, 500));
+	}
+
+	const cookieModeSelect = document.getElementById('video-cookie-mode') as HTMLSelectElement;
+	if (cookieModeSelect) {
+		cookieModeSelect.value = generalSettings.videoClipping.cookieMode;
+		cookieModeSelect.addEventListener('change', () => {
+			saveVideoClippingSettings({ cookieMode: cookieModeSelect.value as Settings['videoClipping']['cookieMode'] });
+		});
+	}
+
+	const cookieBrowserSelect = document.getElementById('video-cookie-browser') as HTMLSelectElement;
+	if (cookieBrowserSelect) {
+		cookieBrowserSelect.value = generalSettings.videoClipping.cookieBrowser;
+		cookieBrowserSelect.addEventListener('change', () => {
+			saveVideoClippingSettings({ cookieBrowser: cookieBrowserSelect.value });
+		});
+	}
+
+	const cookieProfileInput = document.getElementById('video-cookie-profile') as HTMLInputElement;
+	if (cookieProfileInput) {
+		cookieProfileInput.value = generalSettings.videoClipping.cookieProfile;
+		cookieProfileInput.addEventListener('input', debounce(() => {
+			saveVideoClippingSettings({ cookieProfile: cookieProfileInput.value });
+		}, 500));
+	}
+
+	const cookieFileInput = document.getElementById('video-cookie-file') as HTMLInputElement;
+	if (cookieFileInput) {
+		cookieFileInput.value = generalSettings.videoClipping.cookieFile;
+		cookieFileInput.addEventListener('input', debounce(() => {
+			saveVideoClippingSettings({ cookieFile: cookieFileInput.value });
 		}, 500));
 	}
 }

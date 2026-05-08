@@ -76,6 +76,13 @@ export interface VideoClippingSettings {
 	includeSummary: boolean;
 	includeDownloadCommand: boolean;
 	downloadCommandTemplate: string;
+	autoDownload: boolean;
+	autoDownloadDirectory: string;
+	autoDownloadExecutable: string;
+	cookieMode: 'none' | 'browser' | 'file';
+	cookieBrowser: string;
+	cookieProfile: string;
+	cookieFile: string;
 }
 
 export interface SiteFolderRule {

@@ -2,7 +2,7 @@ import browser from './browser-polyfill';
 import { Settings, ModelConfig, PropertyType, HistoryEntry, Provider, Rating } from '../types/types';
 import { debugLog } from './debug';
 import { copyToClipboard } from 'core/popup';
-import { DEFAULT_VIDEO_CLIPPING_SETTINGS } from './video-clipping';
+import { DEFAULT_VIDEO_CLIPPING_SETTINGS, LEGACY_VIDEO_AUTO_DOWNLOAD_DIRECTORY } from './video-clipping';
 import { DEFAULT_FOLDER_ROUTING_SETTINGS, normalizeFolderRoutingSettings } from './folder-routing';
 
 export type { Settings, ModelConfig, PropertyType, HistoryEntry, Provider, Rating };
@@ -116,7 +116,7 @@ interface StorageData {
 	migrationVersion?: number;
 }
 
-const CURRENT_MIGRATION_VERSION = 2;
+const CURRENT_MIGRATION_VERSION = 5;
 
 export async function loadSettings(): Promise<Settings> {
 	const data = await browser.storage.sync.get(null) as StorageData;
@@ -230,6 +230,22 @@ export async function loadSettings(): Promise<Settings> {
 				? true
 				: data.video_clipping_settings?.includeDownloadCommand ?? defaultSettings.videoClipping.includeDownloadCommand,
 			downloadCommandTemplate: data.video_clipping_settings?.downloadCommandTemplate || defaultSettings.videoClipping.downloadCommandTemplate,
+			autoDownload: previousMigrationVersion < 3
+				? true
+				: data.video_clipping_settings?.autoDownload ?? defaultSettings.videoClipping.autoDownload,
+			autoDownloadDirectory: previousMigrationVersion < 4
+				&& (!data.video_clipping_settings?.autoDownloadDirectory
+					|| data.video_clipping_settings.autoDownloadDirectory === LEGACY_VIDEO_AUTO_DOWNLOAD_DIRECTORY)
+				? defaultSettings.videoClipping.autoDownloadDirectory
+				: data.video_clipping_settings?.autoDownloadDirectory || defaultSettings.videoClipping.autoDownloadDirectory,
+			autoDownloadExecutable: data.video_clipping_settings?.autoDownloadExecutable || defaultSettings.videoClipping.autoDownloadExecutable,
+			cookieMode: previousMigrationVersion < 5
+				&& (!data.video_clipping_settings?.cookieMode || data.video_clipping_settings.cookieMode === 'none')
+				? defaultSettings.videoClipping.cookieMode
+				: data.video_clipping_settings?.cookieMode || defaultSettings.videoClipping.cookieMode,
+			cookieBrowser: data.video_clipping_settings?.cookieBrowser || defaultSettings.videoClipping.cookieBrowser,
+			cookieProfile: data.video_clipping_settings?.cookieProfile || defaultSettings.videoClipping.cookieProfile,
+			cookieFile: data.video_clipping_settings?.cookieFile || defaultSettings.videoClipping.cookieFile,
 		},
 		stats: data.stats || defaultSettings.stats,
 		history: data.history || defaultSettings.history,

@@ -1,6 +1,6 @@
 ## Fork-specific changes
 
-This fork differs from the official [Obsidian Web Clipper](https://github.com/obsidianmd/obsidian-clipper) main version by improving Chinese-language content archiving. It normalizes lazy-loaded images in WeChat official account articles so Obsidian's local image saving can download the original article images, and it now has initial one-click clipping support for Bilibili, Douyin, and YouTube video pages. Video clips save the title, creator, publish time, cover image, description, summary, video link, and captions or transcripts when they are available. This fork uses the Simplified Chinese README as the default and keeps this English README available separately.
+This fork differs from the official [Obsidian Web Clipper](https://github.com/obsidianmd/obsidian-clipper) main version by improving Chinese-language content archiving. It normalizes lazy-loaded images in WeChat official account articles so Obsidian's local image saving can download the original article images, adds one-click clipping support for Bilibili, Douyin, and YouTube video pages, and can automatically start a local `yt-dlp` download through a native helper after clipping. Video clips save the title, creator, publish time, cover image, description, summary, video link, and captions or transcripts when they are available. This fork uses the Simplified Chinese README as the default and keeps this English README available separately.
 
 Languages: [Simplified Chinese](README.md) | English
 
@@ -15,7 +15,8 @@ This fork is intended for users searching for issues like these:
 - You want Obsidian's local image saving to capture the original WeChat article images without manually scrolling, refreshing images, or running a second pass inside Obsidian.
 - Obsidian Web Clipper clips Bilibili, Douyin, or YouTube video pages as plain web pages and misses the title, creator, cover image, publish time, description, captions, or transcript.
 - You want to archive videos in Obsidian with a ready-made video note, summary, transcript, source link, and default download command.
-- You want video archiving metadata without a browser extension that embeds a video downloader or automatically runs local commands.
+- You want one clip action to also download Bilibili, Douyin, or YouTube video files locally without copying a `yt-dlp` command by hand.
+- You want video downloads to run through an auditable native helper instead of bundling a downloader inside the browser extension.
 
 Obsidian Web Clipper helps you highlight and capture the web in your favorite browser. Anything you save is stored as durable Markdown files that you can read offline, and preserve for the long term.
 
@@ -38,9 +39,27 @@ Documentation is available on the [Obsidian Help site](https://help.obsidian.md/
 
 Web Clipper also normalizes lazy-loaded images before extracting content. This helps pages that keep their real image URLs in attributes such as `data-src` or `data-srcset`, including WeChat official account articles, so image capture and Obsidian's local image saving use the original image URLs instead of placeholders or runtime lazy-load URLs.
 
-For Bilibili, Douyin, and YouTube video pages, Web Clipper automatically selects the built-in Video clipping template and injects variables such as `{{videoTitle}}`, `{{videoAuthor}}`, `{{videoPublished}}`, `{{videoCover}}`, `{{videoDescription}}`, `{{videoSummary}}`, `{{videoTranscript}}`, `{{videoPlatform}}`, `{{videoDownloadCommand}}`, and `{{videoDownloadCommandInstallGuide}}`. The default summary is generated from the description or the beginning of the transcript and does not call an external AI provider. If you already use the interpreter, you can still add prompt variables to your own video templates for AI summaries.
+For Bilibili, Douyin, and YouTube video pages, Web Clipper automatically selects the built-in Video clipping template and injects variables such as `{{videoTitle}}`, `{{videoAuthor}}`, `{{videoPublished}}`, `{{videoCover}}`, `{{videoDescription}}`, `{{videoSummary}}`, `{{videoTranscript}}`, `{{videoPlatform}}`, `{{videoUrl}}`, `{{videoDownloadCommand}}`, and `{{videoDownloadCommandInstallGuide}}`. The default summary is generated from the description or the beginning of the transcript and does not call an external AI provider. If you already use the interpreter, you can still add prompt variables to your own video templates for AI summaries.
 
-Video download commands are enabled by default. When clipping a video page, the extension writes an external downloader command to the note, for example the `yt-dlp` command `yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"`, which you can run in a terminal to download the video. If the terminal says `yt-dlp` is not installed, the built-in template tells users to install it with Homebrew, winget, or Python first. The extension does not run local commands automatically, does not bundle a downloader, and does not bypass platform restrictions.
+Automatic video download is enabled by default. Browser extensions cannot directly start local programs, so this fork includes a `native-downloader` helper. After you install the helper once and install `yt-dlp`, clipping a video page sends a download job while saving the note, and the helper starts `yt-dlp` in the background. The default folder template is `{{vaultRoot}}/99-Assets/{{path}}`. The native helper resolves `vaultRoot` from the local Obsidian config; for example, if the vault path is `/Users/admin/Documents/Obsidian Vault` and the note path is `Clippings/Videos`, the video is saved under `/Users/admin/Documents/Obsidian Vault/99-Assets/Clippings/Videos`. Video notes still keep a command such as `yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"` for auditing and manual retries.
+
+### Enable automatic video download
+
+1. Install `yt-dlp`; on macOS:
+
+```sh
+brew install yt-dlp
+```
+
+2. After building or unpacking the extension package, install the native helper from the `native-downloader` folder:
+
+```sh
+./native-downloader/install-macos.sh chrome <chrome-extension-id>
+./native-downloader/install-macos.sh edge <edge-extension-id>
+./native-downloader/install-macos.sh firefox
+```
+
+Chromium browsers require the current extension ID from the browser extensions page. Restart the browser after installation, then clip a video page to start a local download automatically. Downloads still depend on platform login state, region, paid-access rules, and `yt-dlp` support. This project does not bundle a downloader and does not bypass platform restrictions.
 
 ## Contribute
 
@@ -61,6 +80,7 @@ In no particular order:
 - [ ] Template directory
 - [ ] Sync settings across browsers
 - [x] One-click clipping for video platforms such as Bilibili, Douyin, and YouTube, including title, creator, publish time, cover image, description, video link, captions or transcripts, and other metadata useful for Obsidian archives
+- [x] Automatically start local `yt-dlp` video downloads through a native helper after clipping
 - [ ] Continue improving video clipping with more reliable transcript capture, mobile share-link handling, short-video page support, template examples, and manual acceptance checks
 - [x] Template validation
 - [x] Template logic (if/for)
@@ -131,7 +151,7 @@ npx vitest run src/api.test.ts src/utils/lazy-images.test.ts src/utils/filters/i
 When changing video clipping logic, run:
 
 ```
-npx vitest run src/utils/video-clipping.test.ts src/api.test.ts
+npx vitest run src/utils/video-download-request.test.ts src/utils/video-clipping.test.ts src/api.test.ts
 ```
 
 ## Third-party libraries

@@ -23,6 +23,9 @@ import { sanitizeFileName } from '../utils/string-utils';
 import { saveFile } from '../utils/file-utils';
 import { translatePage, getMessage, setupLanguageAndDirection } from '../utils/i18n';
 import { formatPropertyValue } from '../utils/shared';
+import { startNativeVideoDownload } from '../utils/video-native-downloader';
+import type { VideoDownloadResponse } from '../utils/video-native-downloader';
+import { appendVideoDownloadLocation } from '../utils/video-download-note';
 import { resolveFolderPathForUrl } from '../utils/folder-routing';
 
 interface ReaderModeResponse {
@@ -1266,6 +1269,7 @@ async function handleSaveToDownloads() {
 
 		const tabInfo = await getCurrentTabInfo();
 		await incrementStat('saveFile', vault, path, tabInfo.url, tabInfo.title);
+		await startVideoDownloadAfterClip({ vault, path, noteName: fileName });
 
 		const moreDropdown = document.getElementById('more-dropdown');
 		if (moreDropdown) {
@@ -1339,14 +1343,15 @@ async function handleClipObsidian(): Promise<void> {
 		// Gather content
 		const properties = getPropertiesFromDOM();
 
-		const frontmatter = await generateFrontmatter(properties);
-		const fileContent = frontmatter + noteContentField.value;
-
 		// Save to Obsidian
 		const selectedVault = vaultDropdown.value || currentTemplate.vault || '';
 		const isDailyNote = currentTemplate.behavior === 'append-daily' || currentTemplate.behavior === 'prepend-daily';
 		const noteName = isDailyNote ? '' : noteNameField?.value || '';
 		const path = isDailyNote ? '' : pathField?.value || '';
+		const videoDownloadResponse = await startVideoDownloadAfterClip({ vault: selectedVault, path, noteName });
+		const noteContent = appendVideoDownloadLocation(noteContentField.value, videoDownloadResponse);
+		const frontmatter = await generateFrontmatter(properties);
+		const fileContent = frontmatter + noteContent;
 
 		await saveToObsidian(fileContent, noteName, path, selectedVault, currentTemplate.behavior);
 		const tabInfo = await getCurrentTabInfo();
@@ -1355,7 +1360,7 @@ async function handleClipObsidian(): Promise<void> {
 		lastSelectedVault = selectedVault;
 		await setLocalStorage('lastSelectedVault', lastSelectedVault);
 
-		if (!isSidePanel) {
+		if (!isSidePanel && (!videoDownloadResponse || videoDownloadResponse.ok)) {
 			setTimeout(() => window.close(), 500);
 		}
 	} catch (error) {
@@ -1363,6 +1368,15 @@ async function handleClipObsidian(): Promise<void> {
 		showError('failedToSaveFile');
 		throw error;
 	}
+}
+
+async function startVideoDownloadAfterClip(context: { vault?: string; path?: string; noteName?: string }): Promise<VideoDownloadResponse | null> {
+	const response = await startNativeVideoDownload(currentVariables, generalSettings.videoClipping, context);
+	if (response && !response.ok) {
+		console.warn('Video auto download was not started:', response.error || 'unknown error');
+		showError('videoAutoDownloadFailed');
+	}
+	return response;
 }
 
 function addSecondaryAction(container: Element, actionType: string, handler: () => void) {

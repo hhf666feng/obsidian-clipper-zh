@@ -1,6 +1,6 @@
 ## 版本差异说明
 
-这是基于官方 [Obsidian Web Clipper](https://github.com/obsidianmd/obsidian-clipper) 的 fork 版本。相比官方主版本，本版本面向中文内容归档做了增强：一是修复微信公众号文章懒加载图片，让 Obsidian 本地图片保存能下载原始文章图片；二是初步支持 B 站、抖音、YouTube 视频页面一键剪切，自动保存标题、作者、发布时间、封面、简介、摘要、视频链接，以及可获取到的字幕或转写。本版本默认使用简体中文 README，并保留英文 README。
+这是基于官方 [Obsidian Web Clipper](https://github.com/obsidianmd/obsidian-clipper) 的 fork 版本。相比官方主版本，本版本面向中文内容归档做了增强：一是修复微信公众号文章懒加载图片，让 Obsidian 本地图片保存能下载原始文章图片；二是支持 B 站、抖音、YouTube 视频页面一键剪切，自动保存标题、作者、发布时间、封面、简介、摘要、视频链接，以及可获取到的字幕或转写；三是支持剪切后通过本机助手自动调用 `yt-dlp`，把视频文件下载到本地。本版本默认使用简体中文 README，并保留英文 README。
 
 语言：简体中文 | [English](README.en.md)
 
@@ -15,7 +15,8 @@
 - 想让 Obsidian 的“本地保存图片”功能直接保存微信公众号原图，不再手动滚动页面、刷新图片、或在 Obsidian 端二次处理。
 - Obsidian Web Clipper 剪切 B 站视频、抖音视频、YouTube 视频时，只得到普通网页内容，缺少标题、作者、封面、发布时间、简介、字幕或转写。
 - 想把视频内容归档到 Obsidian：一键生成视频笔记、视频摘要、字幕转写、原始链接和默认下载命令。
-- 想保存视频资料，但不希望浏览器扩展内置视频下载器或自动执行本地命令。
+- 想点一下剪切，就自动把 B 站、抖音、YouTube 视频文件下载到本地，不再复制 `yt-dlp` 命令手动执行。
+- 想保存视频资料，但希望下载动作由可审计的本机助手完成，不在浏览器扩展里内置视频下载器。
 
 Obsidian Web Clipper 可帮助你在常用浏览器中高亮并裁剪网页。保存的内容会以耐久的 Markdown 文件形式存入你的 Obsidian 仓库，方便离线阅读和长期保存。
 
@@ -38,9 +39,39 @@ Obsidian Web Clipper 可帮助你在常用浏览器中高亮并裁剪网页。�
 
 Web Clipper 会在提取内容前规范化懒加载图片。对于把真实图片地址放在 `data-src`、`data-srcset` 等属性中的网页，包括微信公众号文章，图片裁剪和 Obsidian 本地图片保存会优先使用原始图片地址，而不是占位图或运行时懒加载地址。
 
-对于 B 站、抖音、YouTube 视频页，Web Clipper 会自动选中内置“视频剪切”模板，并注入 `{{videoTitle}}`、`{{videoAuthor}}`、`{{videoPublished}}`、`{{videoCover}}`、`{{videoDescription}}`、`{{videoSummary}}`、`{{videoTranscript}}`、`{{videoPlatform}}`、`{{videoDownloadCommand}}`、`{{videoDownloadCommandInstallGuide}}` 等变量。摘要默认基于简介或字幕前段生成，不调用外部 AI；如果你已经配置了解释器，也可以继续在模板中使用提示变量生成 AI 摘要。
+对于 B 站、抖音、YouTube 视频页，Web Clipper 会自动选中内置“视频剪切”模板，并注入 `{{videoTitle}}`、`{{videoAuthor}}`、`{{videoPublished}}`、`{{videoCover}}`、`{{videoDescription}}`、`{{videoSummary}}`、`{{videoTranscript}}`、`{{videoPlatform}}`、`{{videoUrl}}`、`{{videoDownloadCommand}}`、`{{videoDownloadCommandInstallGuide}}` 等变量。摘要默认基于简介或字幕前段生成，不调用外部 AI；如果你已经配置了解释器，也可以继续在模板中使用提示变量生成 AI 摘要。
 
-视频下载命令默认开启。剪切视频页时，扩展会把外部下载命令写入笔记，例如基于 `yt-dlp` 的 `yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"`，你可以在终端中执行该命令完成下载。如果终端提示 `yt-dlp` 未安装，内置模板会提示用户先用 Homebrew、winget 或 Python 安装 `yt-dlp`。扩展不会自动执行本地命令，不会内置下载器，也不会绕过平台限制。
+抖音适配覆盖 `www.douyin.com/video/...`、`v.douyin.com/...` 和常见移动分享页。剪切时会优先从页面内的 `RENDER_DATA`、`__UNIVERSAL_DATA_FOR_REHYDRATION__`、`_ROUTER_DATA`、`__INIT_PROPS__` 等内嵌数据中提取真实标题、作者、发布时间、封面和规范视频链接，避免只保存“在抖音，记录美好生活”这类通用描述。自动下载仍交给本机 `yt-dlp`，默认使用当前浏览器里目标视频站点的登录 Cookie；抖音是否允许下载和字幕提取取决于账号登录态、地区和平台风控。
+
+自动视频下载默认开启。浏览器扩展本身不能直接启动本地程序，所以本版本提供 `native-downloader` 本机助手：安装一次助手并安装 `yt-dlp` 后，剪切视频页会在保存笔记时自动发送下载任务，助手会在后台调用 `yt-dlp` 把视频保存到本地，默认目录模板是 `{{vaultRoot}}/99-Assets/{{path}}`。本机助手会从 Obsidian 本机配置解析 `vaultRoot`；例如知识库路径是 `/Users/admin/Documents/Obsidian Vault`，笔记保存到 `Clippings/Videos` 时，视频会落到 `/Users/admin/Documents/Obsidian Vault/99-Assets/Clippings/Videos`。笔记里会写入“本地视频”段落，显示 Obsidian 可直接预览的 `![[99-Assets/.../视频.mp4]]` 嵌入、本地保存位置、下载日志和文稿链接；文稿文件会先写入“正在生成”的占位内容，下载完成后如果平台提供字幕或自动字幕，会自动更新成 `视频名.transcript.md` 正文。当前文稿提取基于平台字幕/自动字幕，不内置 Whisper 等语音识别模型，也不会把 B 站弹幕当作文稿；同时仍会保留 `yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"` 这类下载命令，方便审计和手动重跑。
+
+B 站、抖音等平台的下载或字幕接口可能要求登录。默认的 `使用浏览器 Cookie` 会由扩展读取当前浏览器中目标视频站点的 Cookie，发送给本机助手写成一次性的临时 `cookies.txt`，再通过 `yt-dlp --cookies` 使用；下载任务结束后临时文件会自动删除。日志里不会写入 Cookie 值。如果当前浏览器无法提供 Cookie，才会回退到下方浏览器/Profile 配置，让 `yt-dlp --cookies-from-browser` 自行读取。
+
+也可以在扩展设置的“视频剪切”分组里配置登录 Cookie 来源：
+
+- `使用浏览器 Cookie`：默认值。优先使用当前打开视频页面的浏览器登录态，解决 `yt-dlp --cookies-from-browser chrome` 读错 Profile 或读不到最新 Cookie 的问题。
+- `不使用 Cookie`：适合明确不需要登录态的公开视频。
+- `使用 cookies.txt 文件`：适合已经导出 Cookie 文件的用户，本机助手会把文件路径传给 `yt-dlp --cookies`。
+
+例如 B 站字幕或抖音下载提示需要登录时，保持“登录 Cookie 来源”为“使用浏览器 Cookie”即可。只有当扩展无法读取当前浏览器 Cookie 时，才需要在回退配置里选择 `Chrome` 并填写 `Default` / `Profile 1`。
+
+### 启用自动视频下载
+
+1. 安装 `yt-dlp`，macOS 推荐：
+
+```sh
+brew install yt-dlp
+```
+
+2. 构建或解压扩展包后，在 `native-downloader` 目录安装本机助手：
+
+```sh
+./native-downloader/install-macos.sh chrome <chrome-extension-id>
+./native-downloader/install-macos.sh edge <edge-extension-id>
+./native-downloader/install-macos.sh firefox
+```
+
+Chromium 浏览器需要先在扩展管理页复制当前扩展 ID。安装后重启浏览器，再剪切视频页面即可自动开始本地下载。下载仍受平台登录、地区、会员权限和 `yt-dlp` 支持范围限制；本项目不内置下载器，也不绕过平台限制。
 
 ## 贡献
 
@@ -61,6 +92,7 @@ Web Clipper 会在提取内容前规范化懒加载图片。对于把真实图�
 - [ ] 模板目录
 - [ ] 跨浏览器同步设置
 - [x] 一键剪切视频平台内容，例如 B 站、抖音、YouTube 等；自动保存标题、作者、发布时间、封面、简介、视频链接、字幕或转写等适合 Obsidian 归档的元数据
+- [x] 剪切后通过本机助手自动调用 `yt-dlp` 下载视频文件到本地
 - [ ] 持续增强视频平台剪切：更稳定的字幕获取、移动分享链接解析、短视频页面适配、模板示例和手动验收清单
 - [x] 模板校验
 - [x] 模板逻辑（if/for）
@@ -132,7 +164,7 @@ npx vitest run src/api.test.ts src/utils/lazy-images.test.ts src/utils/filters/i
 修改视频剪切逻辑时，请运行：
 
 ```sh
-npx vitest run src/utils/video-clipping.test.ts src/api.test.ts
+npx vitest run src/utils/video-download-request.test.ts src/utils/video-clipping.test.ts src/api.test.ts
 ```
 
 ## 第三方库

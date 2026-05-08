@@ -55,6 +55,13 @@ export const generalSettings: Settings = {
 		includeSummary: true,
 		includeDownloadCommand: true,
 		downloadCommandTemplate: 'yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"',
+		autoDownload: true,
+		autoDownloadDirectory: '{{vaultRoot}}/99-Assets/{{path}}',
+		autoDownloadExecutable: 'yt-dlp',
+		cookieMode: 'browser',
+		cookieBrowser: 'chrome',
+		cookieProfile: '',
+		cookieFile: '',
 	},
 	folderRouting: {
 		defaultPath: 'Clippings',

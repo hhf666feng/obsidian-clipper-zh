@@ -209,6 +209,184 @@ describe('video clipping', () => {
 		expect(data?.published).toContain('2024-06-01');
 	});
 
+	test('extracts Douyin data from universal rehydration state and canonical URL', () => {
+		const fullHtml = `
+			<html>
+				<head>
+					<link rel="canonical" href="https://www.douyin.com/video/7340000000000000000" />
+					<meta property="og:title" content="污染标题 - 抖音" />
+					<meta property="og:description" content="在抖音，记录美好生活。" />
+					<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">
+						{
+							"__DEFAULT_SCOPE__": {
+								"webapp.video-detail": {
+									"aweme_detail": {
+										"aweme_id": "7340000000000000000",
+										"desc": "真正的抖音视频文案 #AI工具",
+										"create_time": 1717200000,
+										"author": { "nickname": "@中文创作者" },
+										"video": {
+											"cover": {
+												"url_list": ["https://p3-sign.douyinpic.com/tos-cn-i-cover.jpeg?x-expires=9999999999"]
+											},
+											"play_addr": {
+												"url_list": ["https://www.douyin.com/aweme/v1/play/?video_id=v0200fg10000example&is_play_url=1"]
+											}
+										},
+										"share_info": {
+											"share_url": "https://www.douyin.com/video/7340000000000000000"
+										}
+									}
+								}
+							}
+						}
+					</script>
+				</head>
+			</html>
+		`;
+
+		const data = extractVideoClipData({
+			url: 'https://v.douyin.com/iExample/',
+			title: '污染标题 - 抖音',
+			author: '',
+			description: '在抖音，记录美好生活。',
+			image: '',
+			published: '',
+			schemaOrgData: null,
+			metaTags: [],
+			extractedContent: {},
+			fullHtml,
+		});
+
+		expect(data).toMatchObject({
+			platform: 'douyin',
+			title: '真正的抖音视频文案 #AI工具',
+			author: '中文创作者',
+			description: '真正的抖音视频文案 #AI工具',
+			cover: 'https://p3-sign.douyinpic.com/tos-cn-i-cover.jpeg?x-expires=9999999999',
+			url: 'https://www.douyin.com/video/7340000000000000000',
+			downloadUrl: 'https://www.douyin.com/aweme/v1/play/?video_id=v0200fg10000example&is_play_url=1',
+		});
+		expect(data?.published).toContain('2024-06-01');
+		expect(data?.summary).not.toContain('记录美好生活');
+	});
+
+	test('prefers the live Douyin media URL collected from the current page', () => {
+		const data = extractVideoClipData({
+			url: 'https://www.douyin.com/video/7340000000000000000',
+			title: '真正的抖音视频文案',
+			author: '',
+			description: '',
+			image: '',
+			published: '',
+			schemaOrgData: null,
+			metaTags: [],
+			extractedContent: {
+				videoDownloadUrl: 'https://www.douyin.com/aweme/v1/play/?video_id=live-page-video&is_play_url=1',
+				videoUserAgent: 'Mozilla/5.0 Current Chrome',
+			},
+			fullHtml: '<html><head><link rel="canonical" href="https://www.douyin.com/video/7340000000000000000"></head></html>',
+		});
+
+		expect(data).toMatchObject({
+			platform: 'douyin',
+			downloadUrl: 'https://www.douyin.com/aweme/v1/play/?video_id=live-page-video&is_play_url=1',
+			userAgent: 'Mozilla/5.0 Current Chrome',
+		});
+	});
+
+	test('extracts Douyin mobile share pages from router data', () => {
+		const fullHtml = `
+			<html>
+				<head>
+					<script>
+						window._ROUTER_DATA = {
+							loaderData: {
+								"video_(id)": {
+									aweme: {
+										detail: {
+											awemeId: "7351111111111111111",
+											title: "移动端分享页标题",
+											desc: "移动端分享页文案",
+											createTime: "1717286400",
+											authorInfo: { nickname: "移动作者" },
+											video: {
+												originCover: {
+													urlList: ["//p9.douyinpic.com/mobile-cover.jpeg"]
+												}
+											}
+										}
+									}
+								}
+							}
+						};
+					</script>
+				</head>
+			</html>
+		`;
+
+		const data = extractVideoClipData({
+			url: 'https://www.iesdouyin.com/share/video/7351111111111111111/',
+			title: '',
+			author: '',
+			description: '',
+			image: '',
+			published: '',
+			schemaOrgData: null,
+			metaTags: [],
+			extractedContent: {},
+			fullHtml,
+		});
+
+		expect(data).toMatchObject({
+			platform: 'douyin',
+			title: '移动端分享页文案',
+			author: '移动作者',
+			description: '移动端分享页文案',
+			cover: 'https://p9.douyinpic.com/mobile-cover.jpeg',
+			url: 'https://www.douyin.com/video/7351111111111111111',
+		});
+	});
+
+	test('extracts Douyin metadata from rendered page meta tags when JSON detail is absent', () => {
+		const data = extractVideoClipData({
+			url: 'https://www.douyin.com/video/7626747241792802098',
+			title: '搭建全网千万收藏的 AI 第二大脑，3分钟教会你！ #TRAE #TRAESOLO #AI新星计划 - 抖音',
+			author: '',
+			description: '',
+			image: '',
+			published: '',
+			schemaOrgData: null,
+			metaTags: [
+				{
+					name: 'description',
+					content: '搭建全网千万收藏的 AI 第二大脑，3分钟教会你！ #TRAE #TRAESOLO #AI新星计划 - 数字游牧人Samuel于20260410发布在抖音，已经收获了394.8万个喜欢，来抖音，记录美好生活！',
+				},
+				{
+					name: 'lark:url:video_title',
+					content: '搭建全网千万收藏的 AI 第二大脑，3分钟教会你！ #TRAE #TRAESOLO #AI新星计划 - 抖音',
+				},
+				{
+					name: 'lark:url:video_cover_image_url',
+					content: 'https://p3-pc-sign.douyinpic.com/image-cut-tos-priv/a63703c69a5d7fc7248f83a5b9374025.jpeg?biz_tag=pcweb_cover',
+				},
+			],
+			extractedContent: {},
+			fullHtml: '<html><head><link rel="canonical" href="https://www.douyin.com/video/7626747241792802098"></head><body></body></html>',
+		});
+
+		expect(data).toMatchObject({
+			platform: 'douyin',
+			title: '搭建全网千万收藏的 AI 第二大脑，3分钟教会你！ #TRAE #TRAESOLO #AI新星计划',
+			author: '数字游牧人Samuel',
+			description: '搭建全网千万收藏的 AI 第二大脑，3分钟教会你！ #TRAE #TRAESOLO #AI新星计划',
+			cover: 'https://p3-pc-sign.douyinpic.com/image-cut-tos-priv/a63703c69a5d7fc7248f83a5b9374025.jpeg?biz_tag=pcweb_cover',
+			url: 'https://www.douyin.com/video/7626747241792802098',
+		});
+		expect(data?.published).toBe('2026-04-09T16:00:00.000Z');
+		expect(data?.summary).not.toContain('记录美好生活');
+	});
+
 	test('injects video variables and includes download command by default', () => {
 		const variables = buildVariables({
 			title: 'How to Build a CLI Tool',
@@ -239,6 +417,7 @@ describe('video clipping', () => {
 		});
 
 		expect(variables['{{videoPlatform}}']).toBe('youtube');
+		expect(variables['{{videoUrl}}']).toBe('https://www.youtube.com/watch?v=abc123');
 		expect(variables['{{videoTitle}}']).toBe('How to Build a CLI Tool');
 		expect(variables['{{videoAuthor}}']).toBe('Tech Channel');
 		expect(variables['{{videoCover}}']).toBe('https://i.ytimg.com/vi/abc123/maxresdefault.jpg');
@@ -292,6 +471,8 @@ describe('video clipping', () => {
 			summary: '简介',
 			transcript: '',
 			url: 'https://www.bilibili.com/video/BV1abc123',
+			downloadUrl: '',
+			userAgent: '',
 		};
 
 		const variables = buildVideoVariables(video, {
@@ -314,6 +495,8 @@ describe('video clipping', () => {
 			summary: 'A tutorial on building CLI tools with Node.js',
 			transcript: '',
 			url: 'https://www.youtube.com/watch?v=abc123',
+			downloadUrl: '',
+			userAgent: '',
 		};
 
 		const variables = buildVideoVariables(video, {

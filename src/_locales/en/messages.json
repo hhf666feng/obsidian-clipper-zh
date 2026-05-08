@@ -1063,6 +1063,9 @@
 			}
 		}
 	},
+	"videoClipping": {
+		"message": "Video clipping"
+	},
 	"folderRouting": {
 		"message": "Folder routing"
 	},
@@ -1078,20 +1081,71 @@
 	"folderRoutingRulesDescription": {
 		"message": "One rule per line. Use \"domain:example.com => Clippings/Example\" or \"regex:^https://example\\\\.com/articles/ => Clippings/Articles\"."
 	},
-	"videoClipping": {
-		"message": "Video clipping"
-	},
 	"videoDownloadCommand": {
 		"message": "Include download command"
 	},
 	"videoDownloadCommandDescription": {
-		"message": "Add an external downloader command to video notes by default. If yt-dlp is missing, the built-in template includes install guidance; Web Clipper does not execute local commands or bundle a downloader."
+		"message": "Add an external downloader command to video notes for auditing or manual retries; automatic download is controlled by the native helper."
 	},
 	"videoDownloadCommandTemplate": {
 		"message": "Download command template"
 	},
 	"videoDownloadCommandTemplateDescription": {
 		"message": "Use variables such as {{url}}, {{videoTitle}}, {{videoAuthor}}, and {{videoPlatform}}."
+	},
+	"videoAutoDownload": {
+		"message": "Auto download video"
+	},
+	"videoAutoDownloadDescription": {
+		"message": "After clipping a video, ask the installed native helper to start yt-dlp in the background."
+	},
+	"videoAutoDownloadDirectory": {
+		"message": "Video download folder template"
+	},
+	"videoAutoDownloadDirectoryDescription": {
+		"message": "Defaults to {{vaultRoot}}/99-Assets/{{path}}. The native helper resolves vaultRoot from Obsidian config; {{vault}} and {{noteName}} are also supported."
+	},
+	"videoAutoDownloadExecutable": {
+		"message": "yt-dlp executable"
+	},
+	"videoAutoDownloadExecutableDescription": {
+		"message": "Use yt-dlp if it is on PATH, or enter the full path to the executable."
+	},
+	"videoAutoDownloadFailed": {
+		"message": "The clip will still be saved, but automatic video download did not start. Make sure native-downloader is installed with the current extension ID and yt-dlp is installed."
+	},
+	"videoCookieBrowser": {
+		"message": "Cookie browser"
+	},
+	"videoCookieBrowserDescription": {
+		"message": "Fallback for yt-dlp --cookies-from-browser when current browser cookies cannot be collected."
+	},
+	"videoCookieFile": {
+		"message": "cookies.txt file"
+	},
+	"videoCookieFileDescription": {
+		"message": "Used only when the cookie source is cookies.txt. Supports paths such as ~/Downloads/cookies.txt."
+	},
+	"videoCookieMode": {
+		"message": "Login cookie source"
+	},
+	"videoCookieModeBrowser": {
+		"message": "Use browser cookies"
+	},
+	"videoCookieModeDescription": {
+		"message": "By default, the extension collects cookies for the current video site, passes them to the native helper as a temporary cookies.txt file, and removes the file after download."
+	},
+	"videoCookieModeFile": {
+		"message": "Use cookies.txt file"
+	},
+	"videoCookieModeNone": {
+		"message": "Do not use cookies"
+	},
+	"videoCookieProfile": {
+		"message": "Browser profile"
+	},
+	"videoCookieProfileDescription": {
+		"message": "Optional yt-dlp --cookies-from-browser fallback profile. Examples: Default, Profile 1."
 	},
 	"videoSummary": {
 		"message": "Include summary"
