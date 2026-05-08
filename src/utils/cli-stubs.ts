@@ -53,8 +53,12 @@ export const generalSettings: Settings = {
 		enableVideoTemplate: true,
 		includeTranscript: true,
 		includeSummary: true,
-		includeDownloadCommand: false,
+		includeDownloadCommand: true,
 		downloadCommandTemplate: 'yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"',
+	},
+	folderRouting: {
+		defaultPath: 'Clippings',
+		rules: [],
 	},
 };
 

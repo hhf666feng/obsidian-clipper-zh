@@ -3,6 +3,7 @@ import { Settings, ModelConfig, PropertyType, HistoryEntry, Provider, Rating } f
 import { debugLog } from './debug';
 import { copyToClipboard } from 'core/popup';
 import { DEFAULT_VIDEO_CLIPPING_SETTINGS } from './video-clipping';
+import { DEFAULT_FOLDER_ROUTING_SETTINGS, normalizeFolderRoutingSettings } from './folder-routing';
 
 export type { Settings, ModelConfig, PropertyType, HistoryEntry, Provider, Rating };
 
@@ -49,7 +50,8 @@ export let generalSettings: Settings = {
 	history: [],
 	ratings: [],
 	saveBehavior: 'addToObsidian',
-	videoClipping: { ...DEFAULT_VIDEO_CLIPPING_SETTINGS }
+	videoClipping: { ...DEFAULT_VIDEO_CLIPPING_SETTINGS },
+	folderRouting: normalizeFolderRoutingSettings(DEFAULT_FOLDER_ROUTING_SETTINGS)
 };
 
 export function setLocalStorage(key: string, value: any): Promise<void> {
@@ -66,8 +68,9 @@ interface StorageData {
 		betaFeatures?: boolean;
 		legacyMode?: boolean;
 		silentOpen?: boolean;
-		openBehavior?: boolean | 'popup' | 'embedded';
+		openBehavior?: boolean | 'popup' | 'embedded' | 'reader';
 		saveBehavior?: 'addToObsidian' | 'copyToClipboard' | 'saveFile';
+		folderRouting?: Partial<Settings['folderRouting']>;
 	};
 	vaults?: string[];
 	highlighter_settings?: {
@@ -113,10 +116,11 @@ interface StorageData {
 	migrationVersion?: number;
 }
 
-const CURRENT_MIGRATION_VERSION = 1;
+const CURRENT_MIGRATION_VERSION = 2;
 
 export async function loadSettings(): Promise<Settings> {
 	const data = await browser.storage.sync.get(null) as StorageData;
+	const previousMigrationVersion = data.migrationVersion || 0;
 	
 	// Load default settings first
 	const defaultSettings: Settings = {
@@ -138,6 +142,7 @@ export async function loadSettings(): Promise<Settings> {
 		propertyTypes: [],
 		saveBehavior: 'addToObsidian',
 		videoClipping: { ...DEFAULT_VIDEO_CLIPPING_SETTINGS },
+		folderRouting: normalizeFolderRoutingSettings(DEFAULT_FOLDER_ROUTING_SETTINGS),
 		readerSettings: {
 			fontSize: 16,
 			lineHeight: 1.6,
@@ -221,13 +226,16 @@ export async function loadSettings(): Promise<Settings> {
 			enableVideoTemplate: data.video_clipping_settings?.enableVideoTemplate ?? defaultSettings.videoClipping.enableVideoTemplate,
 			includeTranscript: data.video_clipping_settings?.includeTranscript ?? defaultSettings.videoClipping.includeTranscript,
 			includeSummary: data.video_clipping_settings?.includeSummary ?? defaultSettings.videoClipping.includeSummary,
-			includeDownloadCommand: data.video_clipping_settings?.includeDownloadCommand ?? defaultSettings.videoClipping.includeDownloadCommand,
+			includeDownloadCommand: previousMigrationVersion < 2
+				? true
+				: data.video_clipping_settings?.includeDownloadCommand ?? defaultSettings.videoClipping.includeDownloadCommand,
 			downloadCommandTemplate: data.video_clipping_settings?.downloadCommandTemplate || defaultSettings.videoClipping.downloadCommandTemplate,
 		},
 		stats: data.stats || defaultSettings.stats,
 		history: data.history || defaultSettings.history,
 		ratings: data.ratings || defaultSettings.ratings,
-		saveBehavior: data.general_settings?.saveBehavior ?? defaultSettings.saveBehavior
+		saveBehavior: data.general_settings?.saveBehavior ?? defaultSettings.saveBehavior,
+		folderRouting: normalizeFolderRoutingSettings(data.general_settings?.folderRouting ?? defaultSettings.folderRouting)
 	};
 
 	generalSettings = loadedSettings;
@@ -249,6 +257,7 @@ export async function saveSettings(settings?: Partial<Settings>): Promise<void> 
 			silentOpen: generalSettings.silentOpen,
 			openBehavior: generalSettings.openBehavior,
 			saveBehavior: generalSettings.saveBehavior,
+			folderRouting: normalizeFolderRoutingSettings(generalSettings.folderRouting),
 		},
 		highlighter_settings: {
 			highlighterEnabled: generalSettings.highlighterEnabled,

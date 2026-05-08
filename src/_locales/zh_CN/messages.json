@@ -1063,6 +1063,21 @@
 			}
 		}
 	},
+	"folderRouting": {
+		"message": "目录路由"
+	},
+	"defaultFolderPath": {
+		"message": "默认目录"
+	},
+	"defaultFolderPathDescription": {
+		"message": "当模板没有指定目录，或模板目录仍是内置默认值 Clippings 时使用。"
+	},
+	"folderRoutingRules": {
+		"message": "站点目录规则"
+	},
+	"folderRoutingRulesDescription": {
+		"message": "每行一条规则。可使用“domain:example.com => Clippings/Example”或“regex:^https://example\\\\.com/articles/ => Clippings/Articles”。"
+	},
 	"videoClipping": {
 		"message": "视频剪切"
 	},
@@ -1070,7 +1085,7 @@
 		"message": "包含下载命令"
 	},
 	"videoDownloadCommandDescription": {
-		"message": "把外部下载工具命令写入笔记。Web Clipper 不会执行命令，也不会直接下载平台视频流。"
+		"message": "默认把外部下载工具命令写入视频笔记。如果 yt-dlp 未安装，内置模板会附带安装指引；Web Clipper 不会自动执行本地命令或内置下载器。"
 	},
 	"videoDownloadCommandTemplate": {
 		"message": "下载命令模板"

@@ -110,10 +110,10 @@ export function getAvailableLanguages(): { code: string; name: string }[] {
 
 export async function getCurrentLanguage(): Promise<string> {
 	const savedLanguage = await getLocalStorage('language');
-	if (savedLanguage && savedLanguage !== '') {
+	if (typeof savedLanguage === 'string') {
 		return savedLanguage;
 	}
-	return ''; // Return empty string for system default
+	return 'zh_CN';
 }
 
 export async function setLanguage(language: string): Promise<void> {
@@ -137,8 +137,8 @@ export function matchBrowserLanguage(): string {
 		return browserLang;
 	}
 
-	// Otherwise default to English
-	return 'en';
+	// Otherwise default to Simplified Chinese for the zh fork.
+	return 'zh_CN';
 }
 
 export async function initializeI18n() {

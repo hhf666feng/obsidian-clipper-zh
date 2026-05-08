@@ -132,6 +132,9 @@ describe('clip', () => {
 		expect(result.frontmatter).toContain('cover: "https://i0.hdslb.com/bfs/archive/cover.jpg"');
 		expect(result.content).toContain('![如何构建一个 CLI 工具](https://i0.hdslb.com/bfs/archive/cover.jpg)');
 		expect(result.content).toContain('这是一段面向开发者的视频简介。');
-		expect(result.content).not.toContain('## 下载命令');
+		expect(result.content).toContain('## 下载命令');
+		expect(result.content).toContain('yt-dlp "https://www.bilibili.com/video/BV1abc123" -o "如何构建一个 CLI 工具.%(ext)s"');
+		expect(result.content).toContain('如果终端提示 yt-dlp 未安装');
+		expect(result.content).toContain('brew install yt-dlp');
 	});
 });

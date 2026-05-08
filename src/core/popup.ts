@@ -23,6 +23,7 @@ import { sanitizeFileName } from '../utils/string-utils';
 import { saveFile } from '../utils/file-utils';
 import { translatePage, getMessage, setupLanguageAndDirection } from '../utils/i18n';
 import { formatPropertyValue } from '../utils/shared';
+import { resolveFolderPathForUrl } from '../utils/folder-routing';
 
 interface ReaderModeResponse {
 	success: boolean;
@@ -930,7 +931,7 @@ async function fillTemplateFieldValues(currentTabId: number, template: Template 
 
 	const pathField = document.getElementById('path-name-field') as HTMLInputElement;
 	if (pathField) {
-		pathField.value = formattedPath;
+		pathField.value = resolveFolderPathForUrl(currentUrl, generalSettings.folderRouting, formattedPath);
 	}
 
 	const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;

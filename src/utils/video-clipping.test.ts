@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { buildVariables } from './shared';
 import {
 	DEFAULT_VIDEO_CLIPPING_SETTINGS,
+	YTDLP_INSTALL_GUIDE,
 	buildVideoVariables,
 	createVideoClipTemplate,
 	detectVideoPlatform,
@@ -147,6 +148,33 @@ describe('video clipping', () => {
 		expect(data?.summary).not.toContain('相关视频');
 	});
 
+	test('uses Bilibili raw HTML meta upload date when extracted meta tags are missing', () => {
+		const data = extractVideoClipData({
+			url: 'https://www.bilibili.com/video/BV1NvRyBzEhq/',
+			title: '全网最全！60分钟全面掌握Claude Code～【附完整文档】_哔哩哔哩_bilibili',
+			author: '秋芝2046',
+			description: 'Claude Code保姆级教学【收藏起来不会错！】从上手安装，到高级用法，这期一次讲全～',
+			image: '//i2.hdslb.com/bfs/archive/4ef379f4341e05c09ba920b4a4ccc6d6cf54f076.jpg@100w_100h_1c.png',
+			published: '',
+			schemaOrgData: {
+				'@context': 'https://schema.org',
+				'@type': 'VideoObject',
+				name: '全网最全！60分钟全面掌握Claude Code～【附完整文档】',
+				uploadDate: '2026-05-07T06:53:56.190Z',
+			},
+			metaTags: [],
+			extractedContent: {},
+			fullHtml: [
+				'<html><head>',
+				'<meta data-vue-meta="true" itemprop="uploadDate" content="2026-05-05 22:08:25">',
+				'<meta data-vue-meta="true" itemprop="datePublished" content="2026-05-05 22:08:25">',
+				'</head></html>',
+			].join(''),
+		});
+
+		expect(data?.published).toBe('2026-05-05T14:08:25.000Z');
+	});
+
 	test('extracts Douyin video data from universal render data', () => {
 		const fullHtml = `
 			<html>
@@ -181,7 +209,7 @@ describe('video clipping', () => {
 		expect(data?.published).toContain('2024-06-01');
 	});
 
-	test('injects video variables and keeps download command disabled by default', () => {
+	test('injects video variables and includes download command by default', () => {
 		const variables = buildVariables({
 			title: 'How to Build a CLI Tool',
 			author: 'Tech Channel',
@@ -215,7 +243,42 @@ describe('video clipping', () => {
 		expect(variables['{{videoAuthor}}']).toBe('Tech Channel');
 		expect(variables['{{videoCover}}']).toBe('https://i.ytimg.com/vi/abc123/maxresdefault.jpg');
 		expect(variables['{{videoTranscript}}']).toContain('Build the command line parser');
+		expect(variables['{{videoDownloadCommand}}']).toBe('yt-dlp "https://www.youtube.com/watch?v=abc123" -o "How to Build a CLI Tool.%(ext)s"');
+		expect(variables['{{videoDownloadCommandInstallGuide}}']).toBe(YTDLP_INSTALL_GUIDE);
+	});
+
+	test('can suppress download command when disabled', () => {
+		const variables = buildVariables({
+			title: 'How to Build a CLI Tool',
+			author: 'Tech Channel',
+			content: '',
+			contentHtml: '',
+			url: 'https://www.youtube.com/watch?v=abc123',
+			fullHtml: '',
+			description: 'A tutorial on building CLI tools with Node.js',
+			favicon: '',
+			image: 'https://i.ytimg.com/vi/abc123/maxresdefault.jpg',
+			published: '',
+			site: 'YouTube',
+			language: 'en',
+			wordCount: 0,
+			schemaOrgData: {
+				'@type': 'VideoObject',
+				name: 'How to Build a CLI Tool',
+				author: 'Tech Channel',
+				uploadDate: '2024-06-15T12:00:00Z',
+				description: 'A tutorial on building CLI tools with Node.js',
+				thumbnailUrl: ['https://i.ytimg.com/vi/abc123/maxresdefault.jpg'],
+			},
+			metaTags: [],
+			extractedContent: {},
+			videoClippingSettings: {
+				includeDownloadCommand: false,
+			},
+		});
+
 		expect(variables['{{videoDownloadCommand}}']).toBe('');
+		expect(variables['{{videoDownloadCommandInstallGuide}}']).toBe('');
 	});
 
 	test('renders a configurable yt-dlp download command when enabled', () => {
@@ -237,6 +300,29 @@ describe('video clipping', () => {
 		});
 
 		expect(variables['{{videoDownloadCommand}}']).toBe('yt-dlp "https://www.bilibili.com/video/BV1abc123" -o "如何构建 \\"CLI\\" 工具.%(ext)s"');
+		expect(variables['{{videoDownloadCommandInstallGuide}}']).toBe(YTDLP_INSTALL_GUIDE);
+	});
+
+	test('omits the yt-dlp install guide for other download commands', () => {
+		const video = {
+			platform: 'youtube' as const,
+			title: 'How to Build a CLI Tool',
+			author: 'Tech Channel',
+			published: '2024-06-15T12:00:00.000Z',
+			cover: 'https://i.ytimg.com/vi/abc123/maxresdefault.jpg',
+			description: 'A tutorial on building CLI tools with Node.js',
+			summary: 'A tutorial on building CLI tools with Node.js',
+			transcript: '',
+			url: 'https://www.youtube.com/watch?v=abc123',
+		};
+
+		const variables = buildVideoVariables(video, {
+			...DEFAULT_VIDEO_CLIPPING_SETTINGS,
+			downloadCommandTemplate: 'echo "{{url}}"',
+		});
+
+		expect(variables['{{videoDownloadCommand}}']).toBe('echo "https://www.youtube.com/watch?v=abc123"');
+		expect(variables['{{videoDownloadCommandInstallGuide}}']).toBe('');
 	});
 
 	test('creates an auto-triggered default video template', () => {
@@ -250,5 +336,6 @@ describe('video clipping', () => {
 		]));
 		expect(template.noteContentFormat).toContain('{{videoTranscript}}');
 		expect(template.noteContentFormat).toContain('{{videoDownloadCommand}}');
+		expect(template.noteContentFormat).toContain('{{videoDownloadCommandInstallGuide}}');
 	});
 });

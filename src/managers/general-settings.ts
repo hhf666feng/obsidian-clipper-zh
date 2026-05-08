@@ -15,6 +15,7 @@ import { debounce } from '../utils/debounce';
 import browser from '../utils/browser-polyfill';
 import { createUsageChart, aggregateUsageData } from '../utils/charts';
 import { getClipHistory } from '../utils/storage-utils';
+import { normalizeFolderPath, parseSiteFolderRulesText, serializeSiteFolderRules } from '../utils/folder-routing';
 import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { showModal, hideModal } from '../utils/modal-utils';
@@ -228,6 +229,7 @@ export function initializeGeneralSettings(): void {
 		initializeExportHighlightsButton();
 		initializeSaveBehaviorDropdown();
 		initializeVideoClippingSettings();
+		initializeFolderRoutingSettings();
 		await initializeUsageChart();
 
 		// Initialize feedback modal close button
@@ -262,6 +264,7 @@ function saveSettingsFromForm(): void {
 	const videoSummaryToggle = document.getElementById('video-summary-toggle') as HTMLInputElement;
 	const videoDownloadCommandToggle = document.getElementById('video-download-command-toggle') as HTMLInputElement;
 	const videoDownloadCommandTemplate = document.getElementById('video-download-command-template') as HTMLInputElement;
+	const folderRouting = readFolderRoutingFromForm();
 
 	const updatedSettings = {
 		...generalSettings, // Keep existing settings
@@ -280,9 +283,22 @@ function saveSettingsFromForm(): void {
 			includeDownloadCommand: videoDownloadCommandToggle?.checked ?? generalSettings.videoClipping.includeDownloadCommand,
 			downloadCommandTemplate: videoDownloadCommandTemplate?.value ?? generalSettings.videoClipping.downloadCommandTemplate,
 		},
+		folderRouting,
 	};
 
 	saveSettings(updatedSettings);
+}
+
+function readFolderRoutingFromForm(): Settings['folderRouting'] {
+	const defaultPathInput = document.getElementById('default-folder-path') as HTMLInputElement;
+	const rulesTextarea = document.getElementById('folder-routing-rules') as HTMLTextAreaElement;
+
+	return {
+		defaultPath: normalizeFolderPath(defaultPathInput?.value || generalSettings.folderRouting.defaultPath),
+		rules: rulesTextarea
+			? parseSiteFolderRulesText(rulesTextarea.value)
+			: generalSettings.folderRouting.rules,
+	};
 }
 
 function initializeShowMoreActionsToggle(): void {
@@ -480,6 +496,18 @@ function initializeVideoClippingSettings(): void {
 		commandTemplateInput.addEventListener('input', debounce(() => {
 			saveVideoClippingSettings({ downloadCommandTemplate: commandTemplateInput.value });
 		}, 500));
+	}
+}
+
+function initializeFolderRoutingSettings(): void {
+	const defaultPathInput = document.getElementById('default-folder-path') as HTMLInputElement;
+	if (defaultPathInput) {
+		defaultPathInput.value = generalSettings.folderRouting.defaultPath;
+	}
+
+	const rulesTextarea = document.getElementById('folder-routing-rules') as HTMLTextAreaElement;
+	if (rulesTextarea) {
+		rulesTextarea.value = serializeSiteFolderRules(generalSettings.folderRouting.rules);
 	}
 }
 

@@ -1,6 +1,14 @@
 @import 'sidebar';
 
 .logo {
+	display: block;
+	width: 20px;
+	height: 20px;
+	flex-shrink: 0;
+	object-fit: contain;
+}
+
+svg.logo {
 	fill: var(--color-accent-1);
 }
 .warning-container {

@@ -1063,6 +1063,21 @@
 			}
 		}
 	},
+	"folderRouting": {
+		"message": "Folder routing"
+	},
+	"defaultFolderPath": {
+		"message": "Default folder"
+	},
+	"defaultFolderPathDescription": {
+		"message": "Used when a template does not specify a folder, or when its folder is the built-in default Clippings."
+	},
+	"folderRoutingRules": {
+		"message": "Site folder rules"
+	},
+	"folderRoutingRulesDescription": {
+		"message": "One rule per line. Use \"domain:example.com => Clippings/Example\" or \"regex:^https://example\\\\.com/articles/ => Clippings/Articles\"."
+	},
 	"videoClipping": {
 		"message": "Video clipping"
 	},
@@ -1070,7 +1085,7 @@
 		"message": "Include download command"
 	},
 	"videoDownloadCommandDescription": {
-		"message": "Add an external downloader command to the note. Web Clipper never runs the command or downloads video streams itself."
+		"message": "Add an external downloader command to video notes by default. If yt-dlp is missing, the built-in template includes install guidance; Web Clipper does not execute local commands or bundle a downloader."
 	},
 	"videoDownloadCommandTemplate": {
 		"message": "Download command template"

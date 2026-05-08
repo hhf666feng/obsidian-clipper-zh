@@ -1471,6 +1471,7 @@ const PRESET_VARIABLES = new Set([
 	'videoCover',
 	'videoDescription',
 	'videoDownloadCommand',
+	'videoDownloadCommandInstallGuide',
 	'videoPlatform',
 	'videoPublished',
 	'videoSummary',

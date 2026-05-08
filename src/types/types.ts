@@ -78,6 +78,17 @@ export interface VideoClippingSettings {
 	downloadCommandTemplate: string;
 }
 
+export interface SiteFolderRule {
+	patternType: 'domain' | 'regex';
+	pattern: string;
+	path: string;
+}
+
+export interface FolderRoutingSettings {
+	defaultPath: string;
+	rules: SiteFolderRule[];
+}
+
 export interface Settings {
 	vaults: string[];
 	showMoreActionsButton: boolean;
@@ -106,6 +117,7 @@ export interface Settings {
 	ratings: Rating[];
 	saveBehavior: 'addToObsidian' | 'saveFile' | 'copyToClipboard';
 	videoClipping: VideoClippingSettings;
+	folderRouting: FolderRoutingSettings;
 }
 
 export interface ModelConfig {
