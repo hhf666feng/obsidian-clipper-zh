@@ -183,11 +183,16 @@ function executableCandidates(executable) {
 	if (executable !== 'yt-dlp') {
 		return [executable];
 	}
+	const preferredYtdlpPaths = String(process.env.OBSIDIAN_CLIPPER_YTDLP_PREFERRED_PATHS || '')
+		.split(path.delimiter)
+		.map(candidate => candidate.trim())
+		.filter(Boolean);
 	return [
-		executable,
+		...preferredYtdlpPaths,
 		'/opt/homebrew/bin/yt-dlp',
 		'/usr/local/bin/yt-dlp',
 		path.join(os.homedir(), '.local', 'bin', 'yt-dlp'),
+		executable,
 	];
 }
 

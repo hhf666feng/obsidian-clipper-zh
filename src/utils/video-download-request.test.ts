@@ -359,6 +359,41 @@ describe('video download requests', () => {
 		expect(logText).toContain('-f best[height<=720][ext=mp4]/bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]/best');
 	});
 
+	test('native host prefers Homebrew yt-dlp over older PATH shims', async () => {
+		const homeDirectory = makeTempDirectory();
+		const outputDirectory = makeTempDirectory();
+		const pathShimDirectory = path.join(homeDirectory, 'bin');
+		const homebrewDirectory = path.join(homeDirectory, 'homebrew', 'bin');
+		mkdirSync(pathShimDirectory, { recursive: true });
+		mkdirSync(homebrewDirectory, { recursive: true });
+		const oldShim = path.join(pathShimDirectory, 'yt-dlp');
+		const homebrewYtdlp = path.join(homebrewDirectory, 'yt-dlp');
+		writeFileSync(oldShim, '#!/bin/sh\necho old-shim "$@"\n');
+		writeFileSync(homebrewYtdlp, '#!/bin/sh\necho homebrew "$@"\n');
+		chmodSync(oldShim, 0o755);
+		chmodSync(homebrewYtdlp, 0o755);
+
+		const response = await runNativeHost({
+			type: 'download-video',
+			version: 1,
+			url: 'https://www.youtube.com/watch?v=ei_rJvFS-Jw',
+			title: 'Demo video',
+			platform: 'youtube',
+			outputDirectory,
+			executable: 'yt-dlp',
+		}, {
+			HOME: homeDirectory,
+			PATH: pathShimDirectory,
+			OBSIDIAN_CLIPPER_YTDLP_PREFERRED_PATHS: homebrewYtdlp,
+		});
+
+		expect(response.ok).toBe(true);
+		expect(response.executable).toBe(homebrewYtdlp);
+		const logText = await waitForText(response.logPath, 'homebrew --no-playlist');
+		expect(logText).toContain('homebrew --no-playlist');
+		expect(logText).not.toContain('old-shim');
+	});
+
 	test('native host forces overwriting stale video files on retry', async () => {
 		const homeDirectory = makeTempDirectory();
 		const outputDirectory = makeTempDirectory();
