@@ -553,7 +553,7 @@ function startDownload(request) {
 	const extractTranscript = Boolean(request.extractTranscript);
 	const logPath = createLogPath();
 	const resolvedExecutable = resolveExecutable(executableCandidates(executable));
-	const args = ['--no-playlist', '--merge-output-format', 'mp4'];
+	const args = ['--no-playlist', '--force-overwrites', '--no-continue', '--merge-output-format', 'mp4'];
 	const cookieSetup = buildCookieArgs(request);
 	args.push(...cookieSetup.args);
 	if (downloadUrl !== url) {

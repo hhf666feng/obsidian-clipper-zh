@@ -107,6 +107,59 @@ export function detectVideoPlatform(urlValue: string): VideoPlatform {
 	return getVideoProvider(urlValue)?.platform || '';
 }
 
+export interface ScopedVideoDownloadCandidate {
+	url: string;
+	pageUrl?: string;
+	startedAt?: number;
+}
+
+export interface ScopedVideoDownloadOptions {
+	minStartedAt?: number;
+}
+
+function douyinVideoIdFromUrl(urlValue: string): string {
+	try {
+		const url = new URL(urlValue);
+		const pathMatch = url.pathname.match(/(?:\/video\/|\/share\/video\/)(\d+)/);
+		if (pathMatch?.[1]) return pathMatch[1];
+
+		for (const key of ['aweme_id', 'awemeId', 'modal_id', 'item_id', 'itemId']) {
+			const value = url.searchParams.get(key);
+			if (value && /^\d+$/.test(value)) return value;
+		}
+		return '';
+	} catch {
+		return '';
+	}
+}
+
+function isScopedToCurrentVideo(candidate: ScopedVideoDownloadCandidate, platform: VideoPlatform, pageUrl: string): boolean {
+	if (platform !== 'douyin' || !candidate.pageUrl) return true;
+
+	const currentId = douyinVideoIdFromUrl(pageUrl);
+	const candidateId = douyinVideoIdFromUrl(candidate.pageUrl);
+	return !currentId || !candidateId || currentId === candidateId;
+}
+
+export function findBestScopedVideoDownloadUrl(
+	candidates: ScopedVideoDownloadCandidate[],
+	platform: VideoPlatform,
+	pageUrl: string,
+	options: ScopedVideoDownloadOptions = {},
+): string {
+	return findBestVideoDownloadUrl(
+		candidates
+			.filter(candidate => candidate.url)
+			.filter(candidate => typeof options.minStartedAt !== 'number'
+				|| typeof candidate.startedAt !== 'number'
+				|| candidate.startedAt >= options.minStartedAt)
+			.filter(candidate => isScopedToCurrentVideo(candidate, platform, pageUrl))
+			.map(candidate => candidate.url),
+		platform,
+		pageUrl,
+	);
+}
+
 function firstValue(value: any): string {
 	if (Array.isArray(value)) {
 		return firstValue(value[0]);
@@ -680,8 +733,7 @@ function extractDouyinVideo(input: VideoClipExtractionInput): Partial<VideoClipD
 	const video = bestDouyinVideoCandidate(roots);
 	const schemaData = extractSchemaVideo(input);
 	const metaDescription = douyinMetaDescription(input);
-	const downloadUrl = findBestVideoDownloadUrl([
-		input.extractedContent?.videoDownloadUrl || '',
+	const structuredDownloadUrl = findBestVideoDownloadUrl([
 		...collectUrlCandidatesFromValue(firstRawValueAtPath(video, [
 			['video', 'play_addr'],
 			['video', 'playAddr'],
@@ -696,6 +748,10 @@ function extractDouyinVideo(input: VideoClipExtractionInput): Partial<VideoClipD
 		])),
 		...collectUrlCandidatesFromValue(video),
 	], 'douyin', input.url);
+	const liveDownloadUrl = findBestVideoDownloadUrl([
+		input.extractedContent?.videoDownloadUrl || '',
+	], 'douyin', input.url);
+	const downloadUrl = structuredDownloadUrl || liveDownloadUrl;
 	const rawTitle = firstValueAtPath(video, [
 		['desc'],
 		['description'],

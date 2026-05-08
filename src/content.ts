@@ -13,7 +13,7 @@ import { debugLog } from './utils/debug';
 import { updateSidebarWidth, addResizeHandle, cleanupResizeHandlers } from './utils/iframe-resize';
 import { parseForClip } from './utils/clip-utils';
 import { normalizeLazyLoadedImages } from './utils/lazy-images';
-import { detectVideoPlatform, findBestVideoDownloadUrl } from './utils/video-clipping';
+import { detectVideoPlatform, findBestScopedVideoDownloadUrl } from './utils/video-clipping';
 
 declare global {
 	interface Window {
@@ -25,28 +25,29 @@ function collectLiveVideoDownloadUrl(pageUrl: string): string {
 	const platform = detectVideoPlatform(pageUrl);
 	if (!platform) return '';
 
-	const candidates: string[] = [];
+	const routeStartedAt = performance.now();
+	const candidates: { url: string; startedAt?: number }[] = [];
 	document.querySelectorAll('video, source').forEach(element => {
 		for (const attr of ['currentSrc', 'src']) {
 			const value = attr in element ? String((element as HTMLMediaElement).currentSrc || (element as HTMLMediaElement).src || '') : '';
-			if (value) candidates.push(value);
+			if (value) candidates.push({ url: value });
 		}
 		for (const attr of ['src', 'data-src']) {
 			const value = element.getAttribute(attr);
-			if (value) candidates.push(value);
+			if (value) candidates.push({ url: value });
 		}
 	});
 
 	try {
 		for (const entry of performance.getEntriesByType('resource')) {
 			const resource = entry as PerformanceResourceTiming;
-			if (resource.name) candidates.push(resource.name);
+			if (resource.name) candidates.push({ url: resource.name, startedAt: resource.startTime });
 		}
 	} catch {
 		// Some embedded contexts can restrict performance entries.
 	}
 
-	return findBestVideoDownloadUrl(candidates, platform, pageUrl);
+	return findBestScopedVideoDownloadUrl(candidates, platform, pageUrl, { minStartedAt: routeStartedAt });
 }
 
 // IIFE to scope variables and allow safe re-execution

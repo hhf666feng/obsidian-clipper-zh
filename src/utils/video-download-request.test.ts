@@ -325,6 +325,24 @@ describe('video download requests', () => {
 		expect(logText).toContain('--cookies-from-browser chrome:Profile 1');
 	});
 
+	test('native host forces overwriting stale video files on retry', async () => {
+		const homeDirectory = makeTempDirectory();
+		const outputDirectory = makeTempDirectory();
+		const response = await runNativeHost({
+			type: 'download-video',
+			version: 1,
+			url: 'https://example.com/video',
+			title: 'Demo video',
+			outputDirectory,
+			executable: '/bin/echo',
+		}, { HOME: homeDirectory });
+
+		expect(response.ok).toBe(true);
+		const logText = await waitForText(response.logPath, '--force-overwrites');
+		expect(logText).toContain('--force-overwrites');
+		expect(logText).toContain('--no-continue');
+	});
+
 	test('native host prefers cookies collected from the current browser extension context', async () => {
 		const homeDirectory = makeTempDirectory();
 		const outputDirectory = makeTempDirectory();

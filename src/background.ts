@@ -5,7 +5,7 @@ import { TextHighlightData } from './utils/highlighter';
 import { debounce } from './utils/debounce';
 import { Settings } from './types/types';
 import { debugLog } from './utils/debug';
-import { detectVideoPlatform, findBestVideoDownloadUrl } from './utils/video-clipping';
+import { detectVideoPlatform, findBestScopedVideoDownloadUrl } from './utils/video-clipping';
 
 const YOUTUBE_EMBED_RULE_ID = 9001;
 const YOUTUBE_INNERTUBE_RULE_ID = 9002;
@@ -118,6 +118,7 @@ let popupPorts: { [tabId: number]: browser.Runtime.Port } = {};
 
 interface ObservedVideoRequest {
 	url: string;
+	pageUrl: string;
 	time: number;
 	type: string;
 }
@@ -140,12 +141,12 @@ function pruneObservedVideoRequests(now = Date.now()): void {
 function rememberObservedVideoRequest(tabId: number, pageUrl: string, url: string, type: string): void {
 	if (tabId < 0 || !pageUrl || !url) return;
 	const platform = detectVideoPlatform(pageUrl);
-	if (!platform || !findBestVideoDownloadUrl([url], platform, pageUrl)) return;
+	if (!platform || !findBestScopedVideoDownloadUrl([{ url, pageUrl }], platform, pageUrl)) return;
 
 	const now = Date.now();
 	const entries = (observedVideoRequestsByTab.get(tabId) || [])
 		.filter(entry => entry.url !== url && now - entry.time <= observedVideoRequestTtlMs);
-	entries.push({ url, time: now, type });
+	entries.push({ url, pageUrl, time: now, type });
 	observedVideoRequestsByTab.set(tabId, entries.slice(-maxObservedVideoRequestsPerTab));
 }
 
@@ -154,7 +155,7 @@ function observedVideoDownloadUrls(tabId: number, pageUrl: string): string[] {
 	const platform = detectVideoPlatform(pageUrl);
 	if (!platform) return [];
 	return (observedVideoRequestsByTab.get(tabId) || [])
-		.filter(entry => findBestVideoDownloadUrl([entry.url], platform, pageUrl))
+		.filter(entry => findBestScopedVideoDownloadUrl([entry], platform, pageUrl))
 		.sort((a, b) => b.time - a.time)
 		.map(entry => entry.url);
 }
@@ -166,9 +167,9 @@ function augmentContentResponseWithObservedVideoUrls(tabId: number, response: an
 	const observedUrls = observedVideoDownloadUrls(tabId, pageUrl);
 	if (!observedUrls.length && !response.extractedContent?.videoDownloadUrl) return response;
 
-	const bestUrl = findBestVideoDownloadUrl([
-		response.extractedContent?.videoDownloadUrl || '',
-		...observedUrls,
+	const bestUrl = findBestScopedVideoDownloadUrl([
+		{ url: response.extractedContent?.videoDownloadUrl || '', pageUrl },
+		...observedUrls.map(url => ({ url, pageUrl })),
 	], platform, pageUrl);
 	if (!bestUrl) return response;
 

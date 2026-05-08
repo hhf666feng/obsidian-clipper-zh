@@ -7,6 +7,7 @@ import {
 	createVideoClipTemplate,
 	detectVideoPlatform,
 	extractVideoClipData,
+	findBestScopedVideoDownloadUrl,
 } from './video-clipping';
 
 describe('video clipping', () => {
@@ -293,6 +294,71 @@ describe('video clipping', () => {
 			downloadUrl: 'https://www.douyin.com/aweme/v1/play/?video_id=live-page-video&is_play_url=1',
 			userAgent: 'Mozilla/5.0 Current Chrome',
 		});
+	});
+
+	test('keeps Douyin observed media URLs scoped to the matching video page', () => {
+		const firstVideoUrl = 'https://v26-web.douyinvod.com/first/media-video-hvc1/?mime_type=video_mp4';
+		const currentVideoUrl = 'https://v26-web.douyinvod.com/current/media-video-hvc1/?mime_type=video_mp4';
+		const thirdVideoUrl = 'https://v26-web.douyinvod.com/third/media-video-hvc1/?mime_type=video_mp4';
+
+		expect(findBestScopedVideoDownloadUrl([
+			{ url: firstVideoUrl, pageUrl: 'https://www.douyin.com/video/7626747241792802098' },
+			{ url: thirdVideoUrl, pageUrl: 'https://www.douyin.com/video/7633794287171989113' },
+		], 'douyin', 'https://www.douyin.com/video/7625484359843319083')).toBe('');
+
+		expect(findBestScopedVideoDownloadUrl([
+			{ url: firstVideoUrl, pageUrl: 'https://www.douyin.com/video/7626747241792802098' },
+			{ url: currentVideoUrl, pageUrl: 'https://www.douyin.com/video/7625484359843319083' },
+			{ url: thirdVideoUrl, pageUrl: 'https://www.douyin.com/video/7633794287171989113' },
+		], 'douyin', 'https://www.douyin.com/video/7625484359843319083')).toBe(currentVideoUrl);
+	});
+
+	test('ignores Douyin performance media entries collected before the current route', () => {
+		const firstVideoUrl = 'https://v26-web.douyinvod.com/first/media-video-hvc1/?mime_type=video_mp4';
+		const currentVideoUrl = 'https://v26-web.douyinvod.com/current/media-video-hvc1/?mime_type=video_mp4';
+
+		expect(findBestScopedVideoDownloadUrl([
+			{ url: firstVideoUrl, startedAt: 1200 },
+			{ url: currentVideoUrl, startedAt: 2200 },
+		], 'douyin', 'https://www.douyin.com/video/7625484359843319083', { minStartedAt: 2000 })).toBe(currentVideoUrl);
+	});
+
+	test('prefers Douyin structured play URL over stale live media URL from another swipe', () => {
+		const fullHtml = `
+			<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">
+				{
+					"__DEFAULT_SCOPE__": {
+						"webapp.video-detail": {
+							"aweme_detail": {
+								"aweme_id": "7625484359843319083",
+								"desc": "一个天才10天写出的工具",
+								"video": {
+									"play_addr": {
+										"url_list": ["https://www.douyin.com/aweme/v1/play/?video_id=current-video&is_play_url=1"]
+									}
+								}
+							}
+						}
+					}
+				}
+			</script>
+		`;
+		const data = extractVideoClipData({
+			url: 'https://www.douyin.com/video/7625484359843319083',
+			title: '',
+			author: '',
+			description: '',
+			image: '',
+			published: '',
+			schemaOrgData: null,
+			metaTags: [],
+			extractedContent: {
+				videoDownloadUrl: 'https://v26-web.douyinvod.com/stale-first-video/media-video-hvc1/?mime_type=video_mp4',
+			},
+			fullHtml,
+		});
+
+		expect(data?.downloadUrl).toBe('https://www.douyin.com/aweme/v1/play/?video_id=current-video&is_play_url=1');
 	});
 
 	test('extracts Douyin mobile share pages from router data', () => {
