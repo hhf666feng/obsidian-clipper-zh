@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
 	DEFAULT_FOLDER_ROUTING_SETTINGS,
+	mergeDefaultFolderRoutingRules,
 	parseSiteFolderRulesText,
 	resolveFolderPathForUrl,
 	serializeSiteFolderRules,
@@ -13,6 +14,7 @@ describe('folder routing', () => {
 		expect(resolveFolderPathForUrl('https://m.youtube.com/watch?v=abc', DEFAULT_FOLDER_ROUTING_SETTINGS, 'Clippings/Videos')).toBe('Clippings/YouTube');
 		expect(resolveFolderPathForUrl('https://www.douyin.com/video/7625484359843319083', DEFAULT_FOLDER_ROUTING_SETTINGS, 'Clippings/Videos')).toBe('Clippings/抖音');
 		expect(resolveFolderPathForUrl('https://v.douyin.com/iExample/', DEFAULT_FOLDER_ROUTING_SETTINGS, 'Clippings/Videos')).toBe('Clippings/抖音');
+		expect(resolveFolderPathForUrl('https://www.iesdouyin.com/share/video/7351111111111111111/', DEFAULT_FOLDER_ROUTING_SETTINGS, 'Clippings/Videos')).toBe('Clippings/抖音');
 	});
 
 	test('uses the configured default folder while preserving explicit template folders', () => {
@@ -38,6 +40,21 @@ describe('folder routing', () => {
 		expect(resolveFolderPathForUrl('https://www.youtube.com/shorts/abc', settings, 'Clippings')).toBe('Media/YouTube');
 		expect(resolveFolderPathForUrl('https://news.ycombinator.com/item?id=123', settings, 'Clippings')).toBe('Forums/Hacker News');
 		expect(resolveFolderPathForUrl('https://news.ycombinator.com/news', settings, 'Clippings')).toBe('Clippings');
+	});
+
+	test('merges new built-in site rules into existing user routing settings', () => {
+		const settings = mergeDefaultFolderRoutingRules({
+			defaultPath: 'Clippings',
+			rules: [
+				{ patternType: 'domain', pattern: 'youtube.com', path: 'Media/YouTube' },
+				{ patternType: 'domain', pattern: 'bilibili.com', path: 'Media/Bilibili' },
+			],
+		});
+
+		expect(resolveFolderPathForUrl('https://www.youtube.com/watch?v=abc', settings, 'Clippings/Videos')).toBe('Media/YouTube');
+		expect(resolveFolderPathForUrl('https://www.bilibili.com/video/BV123', settings, 'Clippings/Videos')).toBe('Media/Bilibili');
+		expect(resolveFolderPathForUrl('https://www.douyin.com/video/7625484359843319083', settings, 'Clippings/Videos')).toBe('Clippings/抖音');
+		expect(resolveFolderPathForUrl('https://v.douyin.com/iExample/', settings, 'Clippings/Videos')).toBe('Clippings/抖音');
 	});
 
 	test('parses editable rule text and serializes it back predictably', () => {

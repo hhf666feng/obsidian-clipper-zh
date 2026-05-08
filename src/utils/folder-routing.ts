@@ -8,6 +8,7 @@ export const DEFAULT_FOLDER_ROUTING_SETTINGS: FolderRoutingSettings = {
 		{ patternType: 'domain', pattern: 'mp.weixin.qq.com', path: 'Clippings/微信公众号' },
 		{ patternType: 'domain', pattern: 'bilibili.com', path: 'Clippings/哔哩哔哩' },
 		{ patternType: 'domain', pattern: 'douyin.com', path: 'Clippings/抖音' },
+		{ patternType: 'domain', pattern: 'iesdouyin.com', path: 'Clippings/抖音' },
 		{ patternType: 'domain', pattern: 'youtube.com', path: 'Clippings/YouTube' },
 		{ patternType: 'domain', pattern: 'youtu.be', path: 'Clippings/YouTube' },
 	],
@@ -28,6 +29,32 @@ export function normalizeFolderRoutingSettings(settings?: Partial<FolderRoutingS
 			.map(normalizeSiteFolderRule)
 			.filter((rule): rule is SiteFolderRule => rule !== null),
 	};
+}
+
+export function mergeDefaultFolderRoutingRules(settings?: Partial<FolderRoutingSettings>): FolderRoutingSettings {
+	const normalizedSettings = normalizeFolderRoutingSettings(settings);
+	const mergedRules = [...normalizedSettings.rules];
+	const existingRuleKeys = new Set(mergedRules.map(folderRuleIdentity));
+
+	for (const rule of DEFAULT_FOLDER_ROUTING_SETTINGS.rules) {
+		const normalizedRule = normalizeSiteFolderRule(rule);
+		if (!normalizedRule) continue;
+
+		const identity = folderRuleIdentity(normalizedRule);
+		if (existingRuleKeys.has(identity)) continue;
+
+		mergedRules.push(normalizedRule);
+		existingRuleKeys.add(identity);
+	}
+
+	return {
+		...normalizedSettings,
+		rules: mergedRules,
+	};
+}
+
+function folderRuleIdentity(rule: SiteFolderRule): string {
+	return `${rule.patternType}:${rule.pattern.trim().toLowerCase()}`;
 }
 
 function normalizeSiteFolderRule(rule: Partial<SiteFolderRule> | null | undefined): SiteFolderRule | null {

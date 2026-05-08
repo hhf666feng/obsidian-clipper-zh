@@ -3,7 +3,7 @@ import { Settings, ModelConfig, PropertyType, HistoryEntry, Provider, Rating } f
 import { debugLog } from './debug';
 import { copyToClipboard } from 'core/popup';
 import { DEFAULT_VIDEO_CLIPPING_SETTINGS, LEGACY_VIDEO_AUTO_DOWNLOAD_DIRECTORY } from './video-clipping';
-import { DEFAULT_FOLDER_ROUTING_SETTINGS, normalizeFolderRoutingSettings } from './folder-routing';
+import { DEFAULT_FOLDER_ROUTING_SETTINGS, mergeDefaultFolderRoutingRules, normalizeFolderRoutingSettings } from './folder-routing';
 
 export type { Settings, ModelConfig, PropertyType, HistoryEntry, Provider, Rating };
 
@@ -116,7 +116,7 @@ interface StorageData {
 	migrationVersion?: number;
 }
 
-const CURRENT_MIGRATION_VERSION = 5;
+const CURRENT_MIGRATION_VERSION = 6;
 
 export async function loadSettings(): Promise<Settings> {
 	const data = await browser.storage.sync.get(null) as StorageData;
@@ -251,7 +251,9 @@ export async function loadSettings(): Promise<Settings> {
 		history: data.history || defaultSettings.history,
 		ratings: data.ratings || defaultSettings.ratings,
 		saveBehavior: data.general_settings?.saveBehavior ?? defaultSettings.saveBehavior,
-		folderRouting: normalizeFolderRoutingSettings(data.general_settings?.folderRouting ?? defaultSettings.folderRouting)
+		folderRouting: previousMigrationVersion < 6
+			? mergeDefaultFolderRoutingRules(data.general_settings?.folderRouting ?? defaultSettings.folderRouting)
+			: normalizeFolderRoutingSettings(data.general_settings?.folderRouting ?? defaultSettings.folderRouting)
 	};
 
 	generalSettings = loadedSettings;
