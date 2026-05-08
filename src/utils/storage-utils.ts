@@ -113,7 +113,7 @@ interface StorageData {
 	migrationVersion?: number;
 }
 
-const CURRENT_MIGRATION_VERSION = 4;
+const CURRENT_MIGRATION_VERSION = 5;
 
 export async function loadSettings(): Promise<Settings> {
 	const data = await browser.storage.sync.get(null) as StorageData;
@@ -235,6 +235,13 @@ export async function loadSettings(): Promise<Settings> {
 				? defaultSettings.videoClipping.autoDownloadDirectory
 				: data.video_clipping_settings?.autoDownloadDirectory || defaultSettings.videoClipping.autoDownloadDirectory,
 			autoDownloadExecutable: data.video_clipping_settings?.autoDownloadExecutable || defaultSettings.videoClipping.autoDownloadExecutable,
+			cookieMode: previousMigrationVersion < 5
+				&& (!data.video_clipping_settings?.cookieMode || data.video_clipping_settings.cookieMode === 'none')
+				? defaultSettings.videoClipping.cookieMode
+				: data.video_clipping_settings?.cookieMode || defaultSettings.videoClipping.cookieMode,
+			cookieBrowser: data.video_clipping_settings?.cookieBrowser || defaultSettings.videoClipping.cookieBrowser,
+			cookieProfile: data.video_clipping_settings?.cookieProfile || defaultSettings.videoClipping.cookieProfile,
+			cookieFile: data.video_clipping_settings?.cookieFile || defaultSettings.videoClipping.cookieFile,
 		},
 		stats: data.stats || defaultSettings.stats,
 		history: data.history || defaultSettings.history,

@@ -39,9 +39,21 @@ Obsidian Web Clipper 可帮助你在常用浏览器中高亮并裁剪网页。�
 
 Web Clipper 会在提取内容前规范化懒加载图片。对于把真实图片地址放在 `data-src`、`data-srcset` 等属性中的网页，包括微信公众号文章，图片裁剪和 Obsidian 本地图片保存会优先使用原始图片地址，而不是占位图或运行时懒加载地址。
 
-对于 B 站、抖音、YouTube 视频页，Web Clipper 会自动选中内置“视频剪切”模板，并注入 `{{videoTitle}}`、`{{videoAuthor}}`、`{{videoPublished}}`、`{{videoCover}}`、`{{videoDescription}}`、`{{videoSummary}}`、`{{videoTranscript}}`、`{{videoPlatform}}`、`{{videoDownloadCommand}}` 等变量。摘要默认基于简介或字幕前段生成，不调用外部 AI；如果你已经配置了解释器，也可以继续在模板中使用提示变量生成 AI 摘要。
+对于 B 站、抖音、YouTube 视频页，Web Clipper 会自动选中内置“视频剪切”模板，并注入 `{{videoTitle}}`、`{{videoAuthor}}`、`{{videoPublished}}`、`{{videoCover}}`、`{{videoDescription}}`、`{{videoSummary}}`、`{{videoTranscript}}`、`{{videoPlatform}}`、`{{videoUrl}}`、`{{videoDownloadCommand}}` 等变量。摘要默认基于简介或字幕前段生成，不调用外部 AI；如果你已经配置了解释器，也可以继续在模板中使用提示变量生成 AI 摘要。
 
-自动视频下载默认开启。浏览器扩展本身不能直接启动本地程序，所以本版本提供 `native-downloader` 本机助手：安装一次助手并安装 `yt-dlp` 后，剪切视频页会在保存笔记时自动发送下载任务，助手会在后台调用 `yt-dlp` 把视频保存到本地，默认目录模板是 `{{vaultRoot}}/99-Assets/{{path}}`。本机助手会从 Obsidian 本机配置解析 `vaultRoot`；例如知识库路径是 `/Users/admin/Documents/Obsidian Vault`，笔记保存到 `Clippings/Videos` 时，视频会落到 `/Users/admin/Documents/Obsidian Vault/99-Assets/Clippings/Videos`。笔记里仍会保留 `yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"` 这类下载命令，方便审计和手动重跑。
+抖音适配覆盖 `www.douyin.com/video/...`、`v.douyin.com/...` 和常见移动分享页。剪切时会优先从页面内的 `RENDER_DATA`、`__UNIVERSAL_DATA_FOR_REHYDRATION__`、`_ROUTER_DATA`、`__INIT_PROPS__` 等内嵌数据中提取真实标题、作者、发布时间、封面和规范视频链接，避免只保存“在抖音，记录美好生活”这类通用描述。自动下载仍交给本机 `yt-dlp`，默认使用当前浏览器里目标视频站点的登录 Cookie；抖音是否允许下载和字幕提取取决于账号登录态、地区和平台风控。
+
+自动视频下载默认开启。浏览器扩展本身不能直接启动本地程序，所以本版本提供 `native-downloader` 本机助手：安装一次助手并安装 `yt-dlp` 后，剪切视频页会在保存笔记时自动发送下载任务，助手会在后台调用 `yt-dlp` 把视频保存到本地，默认目录模板是 `{{vaultRoot}}/99-Assets/{{path}}`。本机助手会从 Obsidian 本机配置解析 `vaultRoot`；例如知识库路径是 `/Users/admin/Documents/Obsidian Vault`，笔记保存到 `Clippings/Videos` 时，视频会落到 `/Users/admin/Documents/Obsidian Vault/99-Assets/Clippings/Videos`。笔记里会写入“本地视频”段落，显示 Obsidian 可直接预览的 `![[99-Assets/.../视频.mp4]]` 嵌入、本地保存位置、下载日志和文稿链接；文稿文件会先写入“正在生成”的占位内容，下载完成后如果平台提供字幕或自动字幕，会自动更新成 `视频名.transcript.md` 正文。当前文稿提取基于平台字幕/自动字幕，不内置 Whisper 等语音识别模型，也不会把 B 站弹幕当作文稿；同时仍会保留 `yt-dlp "{{url}}" -o "{{videoTitle}}.%(ext)s"` 这类下载命令，方便审计和手动重跑。
+
+B 站、抖音等平台的下载或字幕接口可能要求登录。默认的 `使用浏览器 Cookie` 会由扩展读取当前浏览器中目标视频站点的 Cookie，发送给本机助手写成一次性的临时 `cookies.txt`，再通过 `yt-dlp --cookies` 使用；下载任务结束后临时文件会自动删除。日志里不会写入 Cookie 值。如果当前浏览器无法提供 Cookie，才会回退到下方浏览器/Profile 配置，让 `yt-dlp --cookies-from-browser` 自行读取。
+
+也可以在扩展设置的“视频剪切”分组里配置登录 Cookie 来源：
+
+- `使用浏览器 Cookie`：默认值。优先使用当前打开视频页面的浏览器登录态，解决 `yt-dlp --cookies-from-browser chrome` 读错 Profile 或读不到最新 Cookie 的问题。
+- `不使用 Cookie`：适合明确不需要登录态的公开视频。
+- `使用 cookies.txt 文件`：适合已经导出 Cookie 文件的用户，本机助手会把文件路径传给 `yt-dlp --cookies`。
+
+例如 B 站字幕或抖音下载提示需要登录时，保持“登录 Cookie 来源”为“使用浏览器 Cookie”即可。只有当扩展无法读取当前浏览器 Cookie 时，才需要在回退配置里选择 `Chrome` 并填写 `Default` / `Profile 1`。
 
 ### 启用自动视频下载
 

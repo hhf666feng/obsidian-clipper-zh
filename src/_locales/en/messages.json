@@ -1099,6 +1099,39 @@
 	"videoAutoDownloadFailed": {
 		"message": "The clip will still be saved, but automatic video download did not start. Make sure native-downloader is installed with the current extension ID and yt-dlp is installed."
 	},
+	"videoCookieBrowser": {
+		"message": "Cookie browser"
+	},
+	"videoCookieBrowserDescription": {
+		"message": "Fallback for yt-dlp --cookies-from-browser when current browser cookies cannot be collected."
+	},
+	"videoCookieFile": {
+		"message": "cookies.txt file"
+	},
+	"videoCookieFileDescription": {
+		"message": "Used only when the cookie source is cookies.txt. Supports paths such as ~/Downloads/cookies.txt."
+	},
+	"videoCookieMode": {
+		"message": "Login cookie source"
+	},
+	"videoCookieModeBrowser": {
+		"message": "Use browser cookies"
+	},
+	"videoCookieModeDescription": {
+		"message": "By default, the extension collects cookies for the current video site, passes them to the native helper as a temporary cookies.txt file, and removes the file after download."
+	},
+	"videoCookieModeFile": {
+		"message": "Use cookies.txt file"
+	},
+	"videoCookieModeNone": {
+		"message": "Do not use cookies"
+	},
+	"videoCookieProfile": {
+		"message": "Browser profile"
+	},
+	"videoCookieProfileDescription": {
+		"message": "Optional yt-dlp --cookies-from-browser fallback profile. Examples: Default, Profile 1."
+	},
 	"videoSummary": {
 		"message": "Include summary"
 	},

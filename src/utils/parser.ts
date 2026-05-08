@@ -1471,11 +1471,14 @@ const PRESET_VARIABLES = new Set([
 	'videoCover',
 	'videoDescription',
 	'videoDownloadCommand',
+	'videoDownloadUrl',
 	'videoPlatform',
 	'videoPublished',
 	'videoSummary',
 	'videoTitle',
 	'videoTranscript',
+	'videoUserAgent',
+	'videoUrl',
 	'words',
 ]);
 

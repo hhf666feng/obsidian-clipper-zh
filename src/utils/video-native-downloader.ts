@@ -6,12 +6,20 @@ import {
 	VideoDownloadContext,
 	buildVideoDownloadRequest,
 } from './video-download-request';
+import { collectCurrentBrowserVideoCookies } from './video-download-cookies';
 
 export interface VideoDownloadResponse {
 	ok: boolean;
 	pid?: number;
 	executable?: string;
 	outputTemplate?: string;
+	outputPath?: string;
+	vaultRelativeOutputPath?: string;
+	embedMarkdown?: string;
+	transcriptPath?: string;
+	vaultRelativeTranscriptPath?: string;
+	transcriptMarkdown?: string;
+	logPath?: string;
 	error?: string;
 }
 
@@ -26,6 +34,10 @@ export async function startNativeVideoDownload(
 	}
 
 	try {
+		if (request.cookieMode === 'browser') {
+			request.cookies = await collectCurrentBrowserVideoCookies(request.url, request.platform);
+		}
+
 		const runtime = browser.runtime as unknown as {
 			sendNativeMessage?: (hostName: string, message: VideoDownloadRequest) => Promise<VideoDownloadResponse>;
 		};

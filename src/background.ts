@@ -5,6 +5,7 @@ import { TextHighlightData } from './utils/highlighter';
 import { debounce } from './utils/debounce';
 import { Settings } from './types/types';
 import { debugLog } from './utils/debug';
+import { detectVideoPlatform, findBestVideoDownloadUrl } from './utils/video-clipping';
 
 const YOUTUBE_EMBED_RULE_ID = 9001;
 const YOUTUBE_INNERTUBE_RULE_ID = 9002;
@@ -114,6 +115,114 @@ let readerModeState: { [tabId: number]: boolean } = {};
 let hasHighlights = false;
 let isContextMenuCreating = false;
 let popupPorts: { [tabId: number]: browser.Runtime.Port } = {};
+
+interface ObservedVideoRequest {
+	url: string;
+	time: number;
+	type: string;
+}
+
+const observedVideoRequestsByTab = new Map<number, ObservedVideoRequest[]>();
+const observedVideoRequestTtlMs = 10 * 60 * 1000;
+const maxObservedVideoRequestsPerTab = 80;
+
+function pruneObservedVideoRequests(now = Date.now()): void {
+	for (const [tabId, entries] of observedVideoRequestsByTab) {
+		const freshEntries = entries.filter(entry => now - entry.time <= observedVideoRequestTtlMs);
+		if (freshEntries.length > 0) {
+			observedVideoRequestsByTab.set(tabId, freshEntries);
+		} else {
+			observedVideoRequestsByTab.delete(tabId);
+		}
+	}
+}
+
+function rememberObservedVideoRequest(tabId: number, pageUrl: string, url: string, type: string): void {
+	if (tabId < 0 || !pageUrl || !url) return;
+	const platform = detectVideoPlatform(pageUrl);
+	if (!platform || !findBestVideoDownloadUrl([url], platform, pageUrl)) return;
+
+	const now = Date.now();
+	const entries = (observedVideoRequestsByTab.get(tabId) || [])
+		.filter(entry => entry.url !== url && now - entry.time <= observedVideoRequestTtlMs);
+	entries.push({ url, time: now, type });
+	observedVideoRequestsByTab.set(tabId, entries.slice(-maxObservedVideoRequestsPerTab));
+}
+
+function observedVideoDownloadUrls(tabId: number, pageUrl: string): string[] {
+	pruneObservedVideoRequests();
+	const platform = detectVideoPlatform(pageUrl);
+	if (!platform) return [];
+	return (observedVideoRequestsByTab.get(tabId) || [])
+		.filter(entry => findBestVideoDownloadUrl([entry.url], platform, pageUrl))
+		.sort((a, b) => b.time - a.time)
+		.map(entry => entry.url);
+}
+
+function augmentContentResponseWithObservedVideoUrls(tabId: number, response: any, pageUrl: string): any {
+	const platform = detectVideoPlatform(pageUrl);
+	if (!platform || !response || typeof response !== 'object') return response;
+
+	const observedUrls = observedVideoDownloadUrls(tabId, pageUrl);
+	if (!observedUrls.length && !response.extractedContent?.videoDownloadUrl) return response;
+
+	const bestUrl = findBestVideoDownloadUrl([
+		response.extractedContent?.videoDownloadUrl || '',
+		...observedUrls,
+	], platform, pageUrl);
+	if (!bestUrl) return response;
+
+	return {
+		...response,
+		extractedContent: {
+			...(response.extractedContent || {}),
+			videoDownloadUrl: bestUrl,
+		},
+	};
+}
+
+function observeVideoNetworkRequest(details: browser.WebRequest.OnBeforeRequestDetailsType | browser.WebRequest.OnCompletedDetailsType | browser.WebRequest.OnBeforeRedirectDetailsType): void {
+	const tabId = details.tabId ?? -1;
+	if (tabId < 0) return;
+
+	const pageUrl = (details as any).documentUrl || (details as any).originUrl || '';
+	const remember = (resolvedPageUrl: string) => {
+		const type = String(details.type || '');
+		rememberObservedVideoRequest(tabId, resolvedPageUrl, details.url, type);
+
+		const redirectUrl = (details as browser.WebRequest.OnBeforeRedirectDetailsType).redirectUrl;
+		if (redirectUrl) {
+			rememberObservedVideoRequest(tabId, resolvedPageUrl, redirectUrl, `${type}:redirect`);
+		}
+	};
+
+	if (pageUrl) {
+		remember(pageUrl);
+	} else {
+		browser.tabs.get(tabId)
+			.then(tab => remember(tab.url || ''))
+			.catch(() => undefined);
+	}
+}
+
+function registerVideoNetworkObserver(): void {
+	const webRequest = browser.webRequest;
+	if (!webRequest?.onBeforeRequest) return;
+	const filter = {
+		urls: ['<all_urls>'],
+		types: ['media', 'xmlhttprequest', 'other'] as browser.WebRequest.ResourceType[],
+	};
+	try {
+		webRequest.onBeforeRequest.addListener(details => {
+			observeVideoNetworkRequest(details);
+			return undefined;
+		}, filter);
+		webRequest.onCompleted?.addListener(observeVideoNetworkRequest, filter);
+		webRequest.onBeforeRedirect?.addListener(observeVideoNetworkRequest, filter);
+	} catch (error) {
+		debugLog('Clipper', 'Video network observer unavailable', error);
+	}
+}
 
 async function injectContentScript(tabId: number): Promise<void> {
 	if (browser.scripting) {
@@ -656,7 +765,13 @@ browser.runtime.onMessage.addListener((request: unknown, sender: browser.Runtime
 			const message = (typedRequest as any).message;
 			if (tabId && message) {
 				routeMessageToTab(tabId, message).then((response) => {
-					sendResponse(response);
+					if (message.action === 'getPageContent') {
+						browser.tabs.get(tabId)
+							.then(tab => sendResponse(augmentContentResponseWithObservedVideoUrls(tabId, response, tab.url || '')))
+							.catch(() => sendResponse(response));
+					} else {
+						sendResponse(response);
+					}
 				}).catch((error) => {
 					console.error('[Obsidian Clipper] Error sending message to tab:', error);
 					sendResponse({
@@ -1098,7 +1213,8 @@ browser.storage.onChanged.addListener((changes, area) => {
 	}
 });
 
-// Initialize the extension
-initialize().catch(error => {
-	console.error('Failed to initialize background script:', error);
-});
+	// Initialize the extension
+	registerVideoNetworkObserver();
+	initialize().catch(error => {
+		console.error('Failed to initialize background script:', error);
+	});

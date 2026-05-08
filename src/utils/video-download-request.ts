@@ -2,14 +2,28 @@ import { VideoClippingSettings } from '../types/types';
 import {
 	DEFAULT_VIDEO_AUTO_DOWNLOAD_DIRECTORY,
 	DEFAULT_VIDEO_AUTO_DOWNLOAD_EXECUTABLE,
+	DEFAULT_VIDEO_TRANSCRIPT_LANGUAGES,
 } from './video-clipping';
 
 export const DEFAULT_NATIVE_VIDEO_DOWNLOADER_HOST = 'obsidian_clipper_zh_downloader';
+
+export interface VideoDownloadCookie {
+	name: string;
+	value: string;
+	domain: string;
+	path: string;
+	secure: boolean;
+	httpOnly: boolean;
+	hostOnly: boolean;
+	expirationDate?: number;
+}
 
 export interface VideoDownloadRequest {
 	type: 'download-video';
 	version: 1;
 	url: string;
+	downloadUrl?: string;
+	userAgent?: string;
 	title: string;
 	author: string;
 	platform: string;
@@ -18,6 +32,13 @@ export interface VideoDownloadRequest {
 	noteName: string;
 	outputDirectory: string;
 	executable: string;
+	extractTranscript: boolean;
+	transcriptLanguages: string;
+	cookieMode: VideoClippingSettings['cookieMode'];
+	cookieBrowser: string;
+	cookieProfile: string;
+	cookieFile: string;
+	cookies?: VideoDownloadCookie[];
 	requestedAt: string;
 }
 
@@ -58,7 +79,9 @@ export function buildVideoDownloadRequest(
 	}
 
 	const platform = (variables['{{videoPlatform}}'] || '').trim();
-	const url = (variables['{{url}}'] || variables['{{videoUrl}}'] || '').trim();
+	const url = (variables['{{videoUrl}}'] || variables['{{url}}'] || '').trim();
+	const downloadUrl = (variables['{{videoDownloadUrl}}'] || '').trim();
+	const userAgent = (variables['{{videoUserAgent}}'] || '').trim();
 	const title = (variables['{{videoTitle}}'] || variables['{{title}}'] || '').trim();
 	if (!platform || !url || !title) {
 		return null;
@@ -84,6 +107,8 @@ export function buildVideoDownloadRequest(
 		type: 'download-video',
 		version: 1,
 		url,
+		downloadUrl,
+		userAgent,
 		title,
 		author: (variables['{{videoAuthor}}'] || '').trim(),
 		platform,
@@ -92,6 +117,12 @@ export function buildVideoDownloadRequest(
 		noteName,
 		outputDirectory,
 		executable: settings.autoDownloadExecutable || DEFAULT_VIDEO_AUTO_DOWNLOAD_EXECUTABLE,
+		extractTranscript: settings.includeTranscript,
+		transcriptLanguages: DEFAULT_VIDEO_TRANSCRIPT_LANGUAGES,
+		cookieMode: settings.cookieMode || 'browser',
+		cookieBrowser: settings.cookieBrowser || 'chrome',
+		cookieProfile: settings.cookieProfile || '',
+		cookieFile: settings.cookieFile || '',
 		requestedAt,
 	};
 }

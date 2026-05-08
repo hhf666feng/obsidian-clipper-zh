@@ -13,12 +13,40 @@ import { debugLog } from './utils/debug';
 import { updateSidebarWidth, addResizeHandle, cleanupResizeHandlers } from './utils/iframe-resize';
 import { parseForClip } from './utils/clip-utils';
 import { normalizeLazyLoadedImages } from './utils/lazy-images';
-import { detectVideoPlatform } from './utils/video-clipping';
+import { detectVideoPlatform, findBestVideoDownloadUrl } from './utils/video-clipping';
 
 declare global {
 	interface Window {
 		obsidianClipperGeneration?: number;
 	}
+}
+
+function collectLiveVideoDownloadUrl(pageUrl: string): string {
+	const platform = detectVideoPlatform(pageUrl);
+	if (!platform) return '';
+
+	const candidates: string[] = [];
+	document.querySelectorAll('video, source').forEach(element => {
+		for (const attr of ['currentSrc', 'src']) {
+			const value = attr in element ? String((element as HTMLMediaElement).currentSrc || (element as HTMLMediaElement).src || '') : '';
+			if (value) candidates.push(value);
+		}
+		for (const attr of ['src', 'data-src']) {
+			const value = element.getAttribute(attr);
+			if (value) candidates.push(value);
+		}
+	});
+
+	try {
+		for (const entry of performance.getEntriesByType('resource')) {
+			const resource = entry as PerformanceResourceTiming;
+			if (resource.name) candidates.push(resource.name);
+		}
+	} catch {
+		// Some embedded contexts can restrict performance entries.
+	}
+
+	return findBestVideoDownloadUrl(candidates, platform, pageUrl);
 }
 
 // IIFE to scope variables and allow safe re-execution
@@ -229,7 +257,13 @@ declare global {
 					...defuddled.variables,
 				};
 
-				const rawHtml = detectVideoPlatform(document.URL) ? document.documentElement.outerHTML : undefined;
+				const videoPlatform = detectVideoPlatform(document.URL);
+				if (videoPlatform) {
+					extractedContent.videoDownloadUrl = collectLiveVideoDownloadUrl(document.URL);
+					extractedContent.videoUserAgent = navigator.userAgent;
+				}
+
+				const rawHtml = videoPlatform ? document.documentElement.outerHTML : undefined;
 
 				// Create a new DOMParser
 				const parser = new DOMParser();

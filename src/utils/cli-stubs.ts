@@ -58,6 +58,10 @@ export const generalSettings: Settings = {
 		autoDownload: true,
 		autoDownloadDirectory: '{{vaultRoot}}/99-Assets/{{path}}',
 		autoDownloadExecutable: 'yt-dlp',
+		cookieMode: 'browser',
+		cookieBrowser: 'chrome',
+		cookieProfile: '',
+		cookieFile: '',
 	},
 };
 

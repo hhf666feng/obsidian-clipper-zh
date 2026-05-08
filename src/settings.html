@@ -294,6 +294,61 @@
 									</div>
 									<div class="setting-item mod-horizontal">
 										<div class="setting-item-info">
+											<label for="video-cookie-mode" data-i18n="videoCookieMode">Login cookie source</label>
+											<div class="setting-item-description" data-i18n="videoCookieModeDescription">
+												By default, the extension sends current-site cookies to the local helper as a temporary cookies.txt file and removes it after download.
+											</div>
+										</div>
+										<div class="setting-item-control">
+											<select id="video-cookie-mode">
+												<option value="none" data-i18n="videoCookieModeNone">Do not use cookies</option>
+												<option value="browser" data-i18n="videoCookieModeBrowser">Use browser cookies</option>
+												<option value="file" data-i18n="videoCookieModeFile">Use cookies.txt file</option>
+											</select>
+										</div>
+									</div>
+									<div class="setting-item mod-horizontal">
+										<div class="setting-item-info">
+											<label for="video-cookie-browser" data-i18n="videoCookieBrowser">Cookie browser</label>
+											<div class="setting-item-description" data-i18n="videoCookieBrowserDescription">
+												Fallback used only when current browser cookies cannot be collected.
+											</div>
+										</div>
+										<div class="setting-item-control">
+											<select id="video-cookie-browser">
+												<option value="chrome">Chrome</option>
+												<option value="edge">Edge</option>
+												<option value="firefox">Firefox</option>
+												<option value="brave">Brave</option>
+												<option value="safari">Safari</option>
+												<option value="chromium">Chromium</option>
+											</select>
+										</div>
+									</div>
+									<div class="setting-item mod-horizontal">
+										<div class="setting-item-info">
+											<label for="video-cookie-profile" data-i18n="videoCookieProfile">Browser profile</label>
+											<div class="setting-item-description" data-i18n="videoCookieProfileDescription">
+												Optional fallback for yt-dlp --cookies-from-browser. Examples: Default, Profile 1.
+											</div>
+										</div>
+										<div class="setting-item-control">
+											<input type="text" id="video-cookie-profile" spellcheck="false" autocomplete="off" />
+										</div>
+									</div>
+									<div class="setting-item mod-horizontal">
+										<div class="setting-item-info">
+											<label for="video-cookie-file" data-i18n="videoCookieFile">cookies.txt file</label>
+											<div class="setting-item-description" data-i18n="videoCookieFileDescription">
+												Used only when the cookie source is cookies.txt. Supports paths such as ~/Downloads/cookies.txt.
+											</div>
+										</div>
+										<div class="setting-item-control">
+											<input type="text" id="video-cookie-file" spellcheck="false" autocomplete="off" />
+										</div>
+									</div>
+									<div class="setting-item mod-horizontal">
+										<div class="setting-item-info">
 											<label for="video-auto-download-executable" data-i18n="videoAutoDownloadExecutable">yt-dlp executable</label>
 											<div class="setting-item-description" data-i18n="videoAutoDownloadExecutableDescription">
 												Use yt-dlp if it is on PATH, or enter the full path to the executable.

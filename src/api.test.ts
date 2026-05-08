@@ -135,4 +135,51 @@ describe('clip', () => {
 		expect(result.content).toContain('## 下载命令');
 		expect(result.content).toContain('yt-dlp "https://www.bilibili.com/video/BV1abc123" -o "如何构建一个 CLI 工具.%(ext)s"');
 	});
+
+	test('renders Douyin video clipping variables through the API template path', async () => {
+		const { clip } = await import('./api');
+		const { createVideoClipTemplate } = await import('./utils/video-clipping');
+
+		const result = await clip({
+			html: `
+				<html>
+					<head>
+						<title>污染标题 - 抖音</title>
+						<link rel="canonical" href="https://www.douyin.com/video/7340000000000000000" />
+						<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">
+							{
+								"__DEFAULT_SCOPE__": {
+									"webapp.video-detail": {
+										"aweme_detail": {
+											"aweme_id": "7340000000000000000",
+											"desc": "真正的抖音视频文案 #AI工具",
+											"create_time": 1717200000,
+											"author": { "nickname": "中文创作者" },
+											"video": {
+												"cover": {
+													"url_list": ["https://p3-sign.douyinpic.com/cover.jpeg"]
+												}
+											}
+										}
+									}
+								}
+							}
+						</script>
+					</head>
+					<body><main>Douyin video page shell</main></body>
+				</html>
+			`,
+			url: 'https://v.douyin.com/iExample/',
+			template: createVideoClipTemplate(),
+			documentParser,
+		});
+
+		expect(result.noteName).toBe('中文创作者 - 真正的抖音视频文案 AI工具');
+		expect(result.frontmatter).toContain('platform: "douyin"');
+		expect(result.frontmatter).toContain('source: "https://www.douyin.com/video/7340000000000000000"');
+		expect(result.frontmatter).toContain('cover: "https://p3-sign.douyinpic.com/cover.jpeg"');
+		expect(result.content).toContain('![真正的抖音视频文案 #AI工具](https://p3-sign.douyinpic.com/cover.jpeg)');
+		expect(result.content).toContain('真正的抖音视频文案 #AI工具');
+		expect(result.content).toContain('yt-dlp "https://www.douyin.com/video/7340000000000000000" -o "真正的抖音视频文案 #AI工具.%(ext)s"');
+	});
 });

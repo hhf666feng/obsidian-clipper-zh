@@ -1,0 +1,13 @@
+{
+	"noteNameFormat": "{{videoAuthor}} - {{videoTitle}}",
+	"noteContentFormat": "![{{videoTitle}}]({{videoCover}})\n\n{{videoDescription}}\n\n```sh\n{{videoDownloadCommand}}\n```",
+	"properties": [
+		{ "name": "title", "value": "{{videoTitle}}", "type": "text" },
+		{ "name": "author", "value": "{{videoAuthor|wikilink}}", "type": "multitext" },
+		{ "name": "published", "value": "{{videoPublished|date:YYYY-MM-DD}}", "type": "date" },
+		{ "name": "source", "value": "{{videoUrl}}", "type": "text" },
+		{ "name": "platform", "value": "{{videoPlatform}}", "type": "text" },
+		{ "name": "cover", "value": "{{videoCover}}", "type": "text" },
+		{ "name": "tags", "value": "videos", "type": "text" }
+	]
+}
