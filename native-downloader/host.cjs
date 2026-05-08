@@ -7,6 +7,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const DEFAULT_SUBTITLE_LANGUAGES = 'all,-live_chat,-danmaku';
+const YOUTUBE_ARCHIVE_FORMAT = 'best[height<=720][ext=mp4]/bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]/best';
 const DEFAULT_COOKIE_BROWSER = 'chrome';
 const TRANSCRIPT_STATUS_MARKER = '<!-- obsidian-clipper-zh-transcript-status -->';
 const SUPPORTED_COOKIE_BROWSERS = new Set([
@@ -161,6 +162,18 @@ function assertValidRequest(request) {
 		throw new Error('Unsupported native message type');
 	}
 	return assertHttpUrl(request.url, 'Video URL');
+}
+
+function isYouTubeRequest(request, url) {
+	if (String(request.platform || '').toLowerCase() === 'youtube') {
+		return true;
+	}
+	try {
+		const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+		return host === 'youtube.com' || host === 'youtu.be' || host === 'm.youtube.com';
+	} catch {
+		return false;
+	}
 }
 
 function executableCandidates(executable) {
@@ -397,11 +410,19 @@ function subtitleSortScore(fileName) {
 	return 2;
 }
 
-function findSubtitleFile(outputDirectory, outputBaseName) {
+function findSubtitleFile(outputDirectory, outputBaseName, startedAt = 0) {
 	const prefix = `${outputBaseName}.`;
 	try {
 		return fs.readdirSync(outputDirectory)
 			.filter(fileName => fileName.startsWith(prefix) && /\.(srt|vtt)$/i.test(fileName) && !/\.danmaku\./i.test(fileName))
+			.filter(fileName => {
+				if (!startedAt) return true;
+				try {
+					return fs.statSync(path.join(outputDirectory, fileName)).mtimeMs >= startedAt - 1000;
+				} catch {
+					return false;
+				}
+			})
 			.sort((a, b) => subtitleSortScore(a) - subtitleSortScore(b) || a.localeCompare(b))[0] || '';
 	} catch {
 		return '';
@@ -435,7 +456,10 @@ function shouldReplaceTranscriptStatus(transcriptPath) {
 		if (stats.size === 0) {
 			return true;
 		}
-		return fs.readFileSync(transcriptPath, 'utf8').includes(TRANSCRIPT_STATUS_MARKER);
+		const content = fs.readFileSync(transcriptPath, 'utf8');
+		return content.includes(TRANSCRIPT_STATUS_MARKER)
+			|| /^来源：https?:\/\/.+\n字幕文件：`.+\.(?:srt|vtt)`/m.test(content)
+			|| /^状态：(?:正在生成|暂未生成)/m.test(content);
 	} catch {
 		return true;
 	}
@@ -479,7 +503,7 @@ function writeTranscriptMarkdown(job, runError = null) {
 	if (!job.extractTranscript) {
 		return;
 	}
-	const subtitleFileName = findSubtitleFile(job.outputDirectory, job.outputBaseName);
+	const subtitleFileName = findSubtitleFile(job.outputDirectory, job.outputBaseName, Number(job.startedAt) || 0);
 	if (!subtitleFileName) {
 		const reason = runError
 			? `下载任务未成功完成，且没有找到可用字幕文件。错误：${runError.message}`
@@ -554,6 +578,9 @@ function startDownload(request) {
 	const logPath = createLogPath();
 	const resolvedExecutable = resolveExecutable(executableCandidates(executable));
 	const args = ['--no-playlist', '--force-overwrites', '--no-continue', '--merge-output-format', 'mp4'];
+	if (isYouTubeRequest(request, url)) {
+		args.push('-f', YOUTUBE_ARCHIVE_FORMAT);
+	}
 	const cookieSetup = buildCookieArgs(request);
 	args.push(...cookieSetup.args);
 	if (downloadUrl !== url) {
@@ -592,6 +619,7 @@ function startDownload(request) {
 		executable: resolvedExecutable,
 		args,
 		logPath,
+		startedAt: Date.now(),
 		url,
 		downloadUrl,
 		title: request.title,

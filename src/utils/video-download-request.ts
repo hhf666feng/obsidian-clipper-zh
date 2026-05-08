@@ -3,6 +3,7 @@ import {
 	DEFAULT_VIDEO_AUTO_DOWNLOAD_DIRECTORY,
 	DEFAULT_VIDEO_AUTO_DOWNLOAD_EXECUTABLE,
 	DEFAULT_VIDEO_TRANSCRIPT_LANGUAGES,
+	YOUTUBE_VIDEO_TRANSCRIPT_LANGUAGES,
 } from './video-clipping';
 
 export const DEFAULT_NATIVE_VIDEO_DOWNLOADER_HOST = 'obsidian_clipper_zh_downloader';
@@ -118,7 +119,9 @@ export function buildVideoDownloadRequest(
 		outputDirectory,
 		executable: settings.autoDownloadExecutable || DEFAULT_VIDEO_AUTO_DOWNLOAD_EXECUTABLE,
 		extractTranscript: settings.includeTranscript,
-		transcriptLanguages: DEFAULT_VIDEO_TRANSCRIPT_LANGUAGES,
+		transcriptLanguages: platform === 'youtube'
+			? YOUTUBE_VIDEO_TRANSCRIPT_LANGUAGES
+			: DEFAULT_VIDEO_TRANSCRIPT_LANGUAGES,
 		cookieMode: settings.cookieMode || 'browser',
 		cookieBrowser: settings.cookieBrowser || 'chrome',
 		cookieProfile: settings.cookieProfile || '',

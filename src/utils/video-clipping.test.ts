@@ -324,6 +324,32 @@ describe('video clipping', () => {
 		], 'douyin', 'https://www.douyin.com/video/7625484359843319083', { minStartedAt: 2000 })).toBe(currentVideoUrl);
 	});
 
+	test('does not treat YouTube tracking requests as direct video downloads', () => {
+		const trackingUrl = 'https://www.youtube.com/ptracking?html5=1&video_id=NpXk6bQwWrE&pltype=content';
+
+		expect(findBestScopedVideoDownloadUrl([
+			{ url: trackingUrl, pageUrl: 'https://www.youtube.com/watch?v=NpXk6bQwWrE' },
+		], 'youtube', 'https://www.youtube.com/watch?v=NpXk6bQwWrE')).toBe('');
+
+		const data = extractVideoClipData({
+			url: 'https://www.youtube.com/watch?v=NpXk6bQwWrE',
+			title: 'Claude Opus 4.7解锁的9个副业 - YouTube',
+			author: '然冉创业说',
+			description: '',
+			image: 'https://i.ytimg.com/vi/NpXk6bQwWrE/maxresdefault.jpg',
+			published: '',
+			schemaOrgData: null,
+			metaTags: [],
+			extractedContent: {
+				videoDownloadUrl: trackingUrl,
+			},
+			fullHtml: '',
+		});
+
+		expect(data?.url).toBe('https://www.youtube.com/watch?v=NpXk6bQwWrE');
+		expect(data?.downloadUrl).toBe('');
+	});
+
 	test('prefers Douyin structured play URL over stale live media URL from another swipe', () => {
 		const fullHtml = `
 			<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">

@@ -42,6 +42,7 @@ export const LEGACY_VIDEO_AUTO_DOWNLOAD_DIRECTORY = '~/Downloads/Obsidian Web Cl
 export const DEFAULT_VIDEO_AUTO_DOWNLOAD_DIRECTORY = '{{vaultRoot}}/99-Assets/{{path}}';
 export const DEFAULT_VIDEO_AUTO_DOWNLOAD_EXECUTABLE = 'yt-dlp';
 export const DEFAULT_VIDEO_TRANSCRIPT_LANGUAGES = 'all,-live_chat,-danmaku';
+export const YOUTUBE_VIDEO_TRANSCRIPT_LANGUAGES = 'zh-Hans,zh-Hant,zh,en,en-orig';
 export const DEFAULT_VIDEO_COOKIE_BROWSER = 'chrome';
 
 export const DEFAULT_VIDEO_CLIPPING_SETTINGS: VideoClippingSettings = {
@@ -570,6 +571,8 @@ function normalizeCandidateUrl(value: string, baseUrl: string): string {
 }
 
 function scoreVideoDownloadUrl(urlValue: string, platform: VideoPlatform): number {
+	if (platform === 'youtube') return -1000;
+
 	let url: URL;
 	try {
 		url = new URL(urlValue);

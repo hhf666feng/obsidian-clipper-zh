@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -221,6 +221,22 @@ describe('video download requests', () => {
 		expect(request?.extractTranscript).toBe(true);
 	});
 
+	test('limits YouTube subtitle requests to practical preferred languages', () => {
+		const request = buildVideoDownloadRequest(
+			{
+				'{{videoPlatform}}': 'youtube',
+				'{{videoUrl}}': 'https://www.youtube.com/watch?v=NpXk6bQwWrE',
+				'{{videoTitle}}': 'Claude Opus 4.7解锁的9个副业',
+			},
+			DEFAULT_VIDEO_CLIPPING_SETTINGS,
+			{},
+			'2026-05-07T00:00:00.000Z',
+		);
+
+		expect(request?.transcriptLanguages).toBe('zh-Hans,zh-Hant,zh,en,en-orig');
+		expect(request?.transcriptLanguages).not.toContain('all');
+	});
+
 	test('renders vault-relative asset directory templates safely', () => {
 		const request = buildVideoDownloadRequest(
 			{
@@ -323,6 +339,24 @@ describe('video download requests', () => {
 		expect(response.ok).toBe(true);
 		const logText = await waitForText(response.logPath, '--cookies-from-browser chrome:Profile 1');
 		expect(logText).toContain('--cookies-from-browser chrome:Profile 1');
+	});
+
+	test('native host limits YouTube downloads to archive-friendly formats', async () => {
+		const homeDirectory = makeTempDirectory();
+		const outputDirectory = makeTempDirectory();
+		const response = await runNativeHost({
+			type: 'download-video',
+			version: 1,
+			url: 'https://www.youtube.com/watch?v=NpXk6bQwWrE',
+			title: 'Demo video',
+			platform: 'youtube',
+			outputDirectory,
+			executable: '/bin/echo',
+		}, { HOME: homeDirectory });
+
+		expect(response.ok).toBe(true);
+		const logText = await waitForText(response.logPath, 'best[height<=720]');
+		expect(logText).toContain('-f best[height<=720][ext=mp4]/bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]/best');
 	});
 
 	test('native host forces overwriting stale video files on retry', async () => {
@@ -574,6 +608,92 @@ describe('video download requests', () => {
 		expect(readFileSync(transcriptPath, 'utf8')).toContain('# Demo 文稿');
 		expect(readFileSync(transcriptPath, 'utf8')).toContain('来源：https://example.com/video');
 		expect(readFileSync(transcriptPath, 'utf8')).toContain('第一句字幕\n第二句字幕');
+	});
+
+	test('native job replaces legacy generated transcript markdown on retry', async () => {
+		const outputDirectory = makeTempDirectory();
+		const homeDirectory = makeTempDirectory();
+		const jobPath = path.join(homeDirectory, 'video-download-job.json');
+		const logPath = path.join(homeDirectory, 'video-download.log');
+		const transcriptPath = path.join(outputDirectory, 'Demo.transcript.md');
+		writeFileSync(path.join(outputDirectory, 'Demo.zh-Hans.srt'), [
+			'1',
+			'00:00:00,000 --> 00:00:01,000',
+			'新字幕',
+			'',
+		].join('\n'));
+		writeFileSync(transcriptPath, [
+			'# Demo 文稿',
+			'',
+			'来源：https://www.youtube.com/watch?v=wrong',
+			'字幕文件：`Demo.zh-Hans.vtt`',
+			'',
+			'旧字幕',
+			'',
+		].join('\n'));
+		writeFileSync(jobPath, JSON.stringify({
+			executable: '/usr/bin/true',
+			args: [],
+			logPath,
+			url: 'https://example.com/video',
+			title: 'Demo',
+			outputDirectory,
+			outputBaseName: 'Demo',
+			transcriptPath,
+			extractTranscript: true,
+		}));
+
+		await runNativeJob(jobPath);
+
+		const transcript = readFileSync(transcriptPath, 'utf8');
+		expect(transcript).toContain('来源：https://example.com/video');
+		expect(transcript).toContain('新字幕');
+		expect(transcript).not.toContain('旧字幕');
+	});
+
+	test('native job ignores stale subtitles from previous failed attempts', async () => {
+		const outputDirectory = makeTempDirectory();
+		const homeDirectory = makeTempDirectory();
+		const jobPath = path.join(homeDirectory, 'video-download-job.json');
+		const logPath = path.join(homeDirectory, 'video-download.log');
+		const transcriptPath = path.join(outputDirectory, 'Demo.transcript.md');
+		const staleSubtitlePath = path.join(outputDirectory, 'Demo.zh-Hans.vtt');
+		writeFileSync(staleSubtitlePath, [
+			'WEBVTT',
+			'',
+			'00:00:00.000 --> 00:00:01.000',
+			'旧错误字幕',
+			'',
+		].join('\n'));
+		utimesSync(staleSubtitlePath, new Date('2026-05-07T00:00:00.000Z'), new Date('2026-05-07T00:00:00.000Z'));
+		writeFileSync(transcriptPath, [
+			'# Demo 文稿',
+			'',
+			'来源：https://www.youtube.com/watch?v=wrong',
+			'字幕文件：`Demo.zh-Hans.vtt`',
+			'',
+			'旧错误字幕',
+			'',
+		].join('\n'));
+		writeFileSync(jobPath, JSON.stringify({
+			executable: '/usr/bin/false',
+			args: [],
+			logPath,
+			url: 'https://example.com/video',
+			title: 'Demo',
+			outputDirectory,
+			outputBaseName: 'Demo',
+			transcriptPath,
+			extractTranscript: true,
+			startedAt: new Date('2026-05-08T00:00:00.000Z').getTime(),
+		}));
+
+		await runNativeJob(jobPath);
+
+		const transcript = readFileSync(transcriptPath, 'utf8');
+		expect(transcript).toContain('状态：暂未生成');
+		expect(transcript).toContain('没有找到可用字幕文件');
+		expect(transcript).not.toContain('旧错误字幕');
 	});
 
 	test('native job replaces an empty transcript with an unavailable status when no subtitles exist', async () => {
