@@ -1,5 +1,10 @@
-import { describe, test, expect } from 'vitest';
-import { isValidUrl, isBlankPage, isRestrictedUrl } from './active-tab-manager';
+import { afterEach, describe, test, expect } from 'vitest';
+import { __resetTabsQueryMock, __setTabsQueryMock } from './__mocks__/webextension-polyfill';
+import { isValidUrl, isBlankPage, isRestrictedUrl, queryActiveTab } from './active-tab-manager';
+
+afterEach(() => {
+	__resetTabsQueryMock();
+});
 
 describe('isValidUrl', () => {
 	test('returns true for http URLs', () => {
@@ -80,5 +85,45 @@ describe('isRestrictedUrl', () => {
 	test('handles invalid URLs gracefully', () => {
 		expect(isRestrictedUrl('')).toBe(false);
 		expect(isRestrictedUrl('not-a-url')).toBe(false);
+	});
+});
+
+describe('queryActiveTab', () => {
+	test('returns the active tab from the current window', async () => {
+		__setTabsQueryMock(async () => [{ id: 42, url: 'https://example.com' }]);
+
+		await expect(queryActiveTab()).resolves.toEqual({ tabId: 42 });
+	});
+
+	test('falls back to an active non-extension tab when currentWindow has no tab', async () => {
+		__setTabsQueryMock(async (query: any) => {
+			if (query.currentWindow) return [];
+			return [
+				{ id: 7, url: 'chrome-extension://mock-id/popup.html' },
+				{ id: 13, url: 'https://example.com' },
+			];
+		});
+
+		await expect(queryActiveTab()).resolves.toEqual({ tabId: 13 });
+	});
+
+	test('falls back when currentWindow points at an extension page', async () => {
+		__setTabsQueryMock(async (query: any) => {
+			if (query.currentWindow) {
+				return [{ id: 7, url: 'chrome-extension://mock-id/popup.html' }];
+			}
+			return [
+				{ id: 7, url: 'chrome-extension://mock-id/popup.html' },
+				{ id: 13, url: 'https://mp.weixin.qq.com/s/example' },
+			];
+		});
+
+		await expect(queryActiveTab()).resolves.toEqual({ tabId: 13 });
+	});
+
+	test('reports an error when no active tab can be found', async () => {
+		__setTabsQueryMock(async () => []);
+
+		await expect(queryActiveTab()).resolves.toEqual({ error: 'No active tab found' });
 	});
 });

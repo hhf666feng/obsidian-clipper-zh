@@ -16,7 +16,7 @@ import { initializeInterpreter, handleInterpreterUI, collectPromptVariables } fr
 import { adjustNoteNameHeight } from '../utils/ui-utils';
 import { debugLog } from '../utils/debug';
 import { showVariables, initializeVariablesPanel, updateVariablesPanel } from '../managers/inspect-variables';
-import { isBlankPage, isValidUrl, isRestrictedUrl } from '../utils/active-tab-manager';
+import { isBlankPage, isValidUrl, isRestrictedUrl, queryActiveTab, ActiveTabResult } from '../utils/active-tab-manager';
 import { memoizeWithExpiration } from '../utils/memoize';
 import { debounce } from '../utils/debounce';
 import { sanitizeFileName } from '../utils/string-utils';
@@ -111,6 +111,18 @@ async function getCurrentTabInfo(): Promise<{ url: string; title?: string }> {
 		console.warn('Failed to get current tab info for stats:', error);
 		return { url: '' };
 	}
+}
+
+async function getActiveTab(): Promise<ActiveTabResult> {
+	try {
+		const response = await browser.runtime.sendMessage({ action: "getActiveTab" }) as ActiveTabResult;
+		if (response?.tabId || response?.error) {
+			return response;
+		}
+	} catch (error) {
+		console.warn('Falling back to tabs.query for active tab:', error);
+	}
+	return queryActiveTab();
 }
 
 // Memoize extractPageContent with URL-sensitive key
@@ -296,7 +308,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 	try {
 		// Get the active tab via background script to handle Firefox compatibility
-		const response = await browser.runtime.sendMessage({ action: "getActiveTab" }) as { tabId?: number; error?: string };
+		const response = await getActiveTab();
 		if (!response || response.error || !response.tabId) {
 			showError(getMessage('pleaseReload'));
 			return;

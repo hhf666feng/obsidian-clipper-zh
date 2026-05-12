@@ -3,6 +3,11 @@ import browser from './browser-polyfill';
 let currentActiveTabId: number | undefined;
 let currentWindowId: number | undefined;
 
+export interface ActiveTabResult {
+	tabId?: number;
+	error?: string;
+}
+
 export async function updateCurrentActiveTab(windowId: number) {
 	const tabs = await browser.tabs.query({ active: true, windowId: windowId });
 	if (tabs[0] && tabs[0].id && tabs[0].url) {
@@ -17,6 +22,32 @@ export async function updateCurrentActiveTab(windowId: number) {
 			isRestrictedUrl: isRestrictedUrl(tabs[0].url)
 		});
 	}
+}
+
+export async function queryActiveTab(): Promise<ActiveTabResult> {
+	const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+	let currentTab = tabs[0];
+
+	// Fallback for extension pages and detached UI contexts where currentWindow
+	// can point at the popup/devtools window instead of the browser tab.
+	if (!currentTab?.id || isExtensionPageUrl(currentTab.url)) {
+		const allActiveTabs = await browser.tabs.query({ active: true });
+		currentTab = allActiveTabs.find(tab =>
+			tab.id && tab.url && !isExtensionPageUrl(tab.url)
+		) || allActiveTabs[0];
+	}
+
+	if (currentTab?.id) {
+		return { tabId: currentTab.id };
+	}
+	return { error: 'No active tab found' };
+}
+
+function isExtensionPageUrl(url: string | undefined): boolean {
+	if (!url) return false;
+	return url.startsWith('chrome-extension://') ||
+		url.startsWith('moz-extension://') ||
+		url.startsWith('safari-web-extension://');
 }
 
 export function isValidUrl(url: string | undefined): boolean {

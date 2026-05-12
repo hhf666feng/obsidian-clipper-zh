@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill';
 import { detectBrowser } from './utils/browser-detection';
-import { updateCurrentActiveTab, isValidUrl, isBlankPage, isNormalPageUrl } from './utils/active-tab-manager';
+import { updateCurrentActiveTab, isValidUrl, isBlankPage, isNormalPageUrl, queryActiveTab } from './utils/active-tab-manager';
 import { TextHighlightData } from './utils/highlighter';
 import { debounce } from './utils/debounce';
 import { Settings } from './types/types';
@@ -679,21 +679,7 @@ browser.runtime.onMessage.addListener((request: unknown, sender: browser.Runtime
 		}
 
 		if (typedRequest.action === "getActiveTab") {
-			browser.tabs.query({active: true, currentWindow: true}).then(async (tabs) => {
-				let currentTab = tabs[0];
-				// Fallback for when currentWindow has no tabs (e.g., debugging popup in DevTools)
-				if (!currentTab || !currentTab.id) {
-					const allActiveTabs = await browser.tabs.query({active: true});
-					currentTab = allActiveTabs.find(tab =>
-						tab.id && tab.url && !tab.url.startsWith('chrome-extension://') && !tab.url.startsWith('moz-extension://')
-					) || allActiveTabs[0];
-				}
-				if (currentTab && currentTab.id) {
-					sendResponse({tabId: currentTab.id});
-				} else {
-					sendResponse({error: 'No active tab found'});
-				}
-			});
+			queryActiveTab().then(sendResponse);
 			return true;
 		}
 

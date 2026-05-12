@@ -19,8 +19,18 @@ export const storage = {
 	},
 };
 
+let tabsQuery = async (_query?: unknown) => [] as Array<{ id?: number; url?: string }>;
+
+export const __setTabsQueryMock = (handler: typeof tabsQuery) => {
+	tabsQuery = handler;
+};
+
+export const __resetTabsQueryMock = () => {
+	tabsQuery = async () => [];
+};
+
 export const tabs = {
-	query: async () => [],
+	query: (...args: Parameters<typeof tabsQuery>) => tabsQuery(...args),
 	sendMessage: async () => ({}),
 };
 
