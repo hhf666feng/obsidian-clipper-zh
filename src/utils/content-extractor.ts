@@ -45,6 +45,7 @@ function normalizeText(html: string): string {
 }
 
 interface ContentResponse {
+	url?: string;
 	content: string;
 	selectedHtml: string;
 	extractedContent: ExtractedContent;

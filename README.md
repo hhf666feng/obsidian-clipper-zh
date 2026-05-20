@@ -8,7 +8,7 @@
 - 视频剪切：支持 B 站、抖音、YouTube 一键生成结构化视频笔记。
 - 本地视频下载：剪切后可通过本机助手调用 `yt-dlp`，把视频、字幕和下载日志保存到 Obsidian 库内。
 
-当前发布版：[v1.6.2-zh.5](https://github.com/hhf666feng/obsidian-clipper-zh/releases/tag/v1.6.2-zh.5)
+当前发布版：[v1.6.2-zh.11](https://github.com/hhf666feng/obsidian-clipper-zh/releases/tag/v1.6.2-zh.11)
 
 ## 适合谁
 
@@ -26,14 +26,14 @@
 
 ### Chrome、Brave、Edge、Arc
 
-1. 下载 `obsidian-web-clipper-1.6.2-zh.5-chrome.zip` 并解压。
+1. 下载 `obsidian-web-clipper-1.6.2-zh.11-chrome.zip` 并解压。
 2. 打开 `chrome://extensions`。
 3. 开启 **Developer mode**。
 4. 点击 **Load unpacked**，选择解压后的目录。
 
 ### Firefox
 
-1. 下载 `obsidian-web-clipper-1.6.2-zh.5-firefox.zip` 并解压。
+1. 下载 `obsidian-web-clipper-1.6.2-zh.11-firefox.zip` 并解压。
 2. 打开 `about:debugging#/runtime/this-firefox`。
 3. 点击 **Load Temporary Add-on**。
 4. 选择解压目录里的 `manifest.json`。
@@ -206,7 +206,7 @@ ls -lt ~/.obsidian-clipper-zh/logs | head
 
 ### 抖音仍保存到 `Clippings/Videos`
 
-升级到 `v1.6.2-zh.5` 后会补齐默认路由。也可以在设置页的“文件夹路由”中确认有这些规则：
+升级到 `v1.6.2-zh.11` 后会补齐默认路由。也可以在设置页的“文件夹路由”中确认有这些规则：
 
 ```text
 domain:douyin.com => Clippings/抖音

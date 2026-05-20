@@ -36,6 +36,23 @@ export interface BuildVariablesParams {
 	videoClippingSettings?: Partial<VideoClippingSettings>;
 }
 
+function normalizePrimaryImageUrl(image: string): string {
+	const trimmed = (image || '').trim();
+	if (!trimmed) return '';
+
+	try {
+		const url = new URL(trimmed);
+		const host = url.hostname.replace(/^www\./, '');
+		if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtu.be') {
+			return '';
+		}
+	} catch {
+		return trimmed;
+	}
+
+	return trimmed;
+}
+
 /**
  * Build the template variable dictionary from extracted page data.
  * Pure function — no browser dependencies.
@@ -43,6 +60,7 @@ export interface BuildVariablesParams {
 export function buildVariables(params: BuildVariablesParams): Record<string, string> {
 	const currentUrl = params.url.replace(/#:~:text=[^&]+(&|$)/, '');
 	const noteName = sanitizeFileName(params.title);
+	const primaryImage = normalizePrimaryImageUrl(params.image);
 
 	const timestamp = dayjs().format('YYYY-MM-DDTHH:mm:ssZ');
 	const variables: Record<string, string> = {
@@ -58,7 +76,7 @@ export function buildVariables(params: BuildVariablesParams): Record<string, str
 		'{{favicon}}': params.favicon || '',
 		'{{fullHtml}}': (params.fullHtml || '').trim(),
 		'{{highlights}}': params.highlights || '',
-		'{{image}}': params.image || '',
+		'{{image}}': primaryImage,
 		'{{noteName}}': noteName.trim(),
 		'{{published}}': (params.published || '').split(',')[0].trim(),
 		'{{site}}': (params.site || '').trim(),
@@ -80,7 +98,7 @@ export function buildVariables(params: BuildVariablesParams): Record<string, str
 		title: params.title,
 		author: params.author,
 		description: params.description,
-		image: params.image,
+		image: primaryImage,
 		published: params.published,
 		schemaOrgData: params.schemaOrgData,
 		metaTags: params.metaTags,

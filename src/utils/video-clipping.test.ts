@@ -8,6 +8,7 @@ import {
 	detectVideoPlatform,
 	extractVideoClipData,
 	findBestScopedVideoDownloadUrl,
+	syncVideoClipTemplate,
 } from './video-clipping';
 
 describe('video clipping', () => {
@@ -16,6 +17,7 @@ describe('video clipping', () => {
 		expect(detectVideoPlatform('https://v.douyin.com/iExample/')).toBe('douyin');
 		expect(detectVideoPlatform('https://www.youtube.com/watch?v=abc123')).toBe('youtube');
 		expect(detectVideoPlatform('https://m.youtube.com/watch?v=abc123')).toBe('youtube');
+		expect(detectVideoPlatform('https://www.youtube.com/playlist?list=PL123')).toBe('');
 		expect(detectVideoPlatform('https://www.youtube.com/shorts/abc123')).toBe('youtube');
 		expect(detectVideoPlatform('https://www.youtube.com/live/abc123?si=share')).toBe('youtube');
 		expect(detectVideoPlatform('https://example.com/articles/video')).toBe('');
@@ -539,6 +541,48 @@ describe('video clipping', () => {
 		expect(data?.summary).toBe('A tutorial on building CLI tools with Node.js');
 	});
 
+	test('does not treat pure YouTube playlist pages as single video clips', () => {
+		const data = extractVideoClipData({
+			url: 'https://www.youtube.com/playlist?list=PLmWCw1CzcFilebjK89WLb5cAvM8K0cLB3',
+			title: 'Claude Code 101',
+			author: 'Claude',
+			description: 'New to Claude Code? Start here.',
+			image: '',
+			published: '',
+			schemaOrgData: null,
+			metaTags: [],
+			extractedContent: {},
+			fullHtml: `
+				<html>
+					<head>
+						<script>
+							var ytInitialPlayerResponse = {
+								"videoDetails": {
+									"videoId": "0kILa02vKuI",
+									"title": "Getting started with Claude Code",
+									"author": "Claude",
+									"shortDescription": "Start here for Claude Code basics.",
+									"thumbnail": {
+										"thumbnails": [
+											{ "url": "https://i.ytimg.com/vi/0kILa02vKuI/maxresdefault.jpg", "width": 1280 }
+										]
+									}
+								},
+								"microformat": {
+									"playerMicroformatRenderer": {
+										"publishDate": "2025-05-01"
+									}
+								}
+							};
+						</script>
+					</head>
+				</html>
+			`,
+		});
+
+		expect(data).toBeNull();
+	});
+
 	test('extracts clean YouTube data from meta fallbacks and youtu.be URLs', () => {
 		const data = extractVideoClipData({
 			url: 'https://youtu.be/abc123?si=share',
@@ -701,5 +745,51 @@ describe('video clipping', () => {
 		expect(template.noteContentFormat).toContain('{{videoTranscript}}');
 		expect(template.noteContentFormat).toContain('{{videoDownloadCommand}}');
 		expect(template.noteContentFormat).toContain('{{videoDownloadCommandInstallGuide}}');
+	});
+
+	test('repairs stale built-in video templates from synced storage', () => {
+		const staleTemplate = {
+			...createVideoClipTemplate(),
+			noteNameFormat: '',
+			path: '',
+			noteContentFormat: '',
+			vault: 'Work',
+			context: 'custom context',
+			properties: [
+				{ name: 'title', value: '', type: 'text' },
+				{ name: 'author', value: '', type: 'multitext' },
+				{ name: 'published', value: '', type: 'date' },
+				{ name: 'source', value: '', type: 'text' },
+				{ name: 'platform', value: '', type: 'text' },
+				{ name: 'cover', value: '', type: 'text' },
+				{ name: 'tags', value: '', type: 'text' },
+			],
+			triggers: [],
+		};
+
+		const { template, changed } = syncVideoClipTemplate(staleTemplate, true);
+
+		expect(changed).toBe(true);
+		expect(template.vault).toBe('Work');
+		expect(template.context).toBe('custom context');
+		expect(template.noteNameFormat).toBe('{{videoAuthor}} - {{videoTitle}}');
+		expect(template.noteContentFormat).toContain('{{videoDescription}}');
+		expect(template.properties.find(property => property.name === 'tags')?.value).toBe('videos');
+		expect(template.properties.find(property => property.name === 'title')?.value).toBe('{{videoTitle}}');
+		expect(template.triggers).toContain('https://www.youtube.com/watch');
+	});
+
+	test('can keep the built-in video template disabled while repairing its fields', () => {
+		const staleTemplate = {
+			...createVideoClipTemplate(),
+			properties: [],
+			triggers: ['https://www.youtube.com/watch'],
+		};
+
+		const { template, changed } = syncVideoClipTemplate(staleTemplate, false);
+
+		expect(changed).toBe(true);
+		expect(template.properties.find(property => property.name === 'title')?.value).toBe('{{videoTitle}}');
+		expect(template.triggers).toEqual([]);
 	});
 });

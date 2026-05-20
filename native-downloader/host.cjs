@@ -409,6 +409,24 @@ function runCommand(executable, args, logPath) {
 	});
 }
 
+function logIndicatesSubtitleDownloadFailure(logPath) {
+	try {
+		const logText = fs.readFileSync(logPath, 'utf8');
+		return /Unable to download video subtitles/i.test(logText)
+			|| /(?:subtitles?|字幕).*(?:HTTP Error|Too Many Requests|429|failed|error)/i.test(logText);
+	} catch {
+		return false;
+	}
+}
+
+function shouldRetryWithoutSubtitles(job) {
+	return Boolean(job.extractTranscript)
+		&& Array.isArray(job.fallbackArgs)
+		&& job.fallbackArgs.length > 0
+		&& !fs.existsSync(job.outputPath)
+		&& logIndicatesSubtitleDownloadFailure(job.logPath);
+}
+
 function subtitleSortScore(fileName) {
 	if (/(zh|zho|chi|cmn|cn|hans|chs)/i.test(fileName)) return 0;
 	if (/(en|eng)/i.test(fileName)) return 1;
@@ -543,6 +561,17 @@ async function runJob(jobPath) {
 	} catch (error) {
 		runError = error instanceof Error ? error : new Error(String(error));
 		appendLogLine(job.logPath, `Job failed: ${runError.message}`);
+		if (shouldRetryWithoutSubtitles(job)) {
+			appendLogLine(job.logPath, 'Subtitle download failed; retrying video download without subtitle options.');
+			try {
+				await runCommand(job.executable, job.fallbackArgs, job.logPath);
+				runError = null;
+				appendLogLine(job.logPath, 'Video download succeeded without subtitles.');
+			} catch (fallbackError) {
+				runError = fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
+				appendLogLine(job.logPath, `Fallback video download failed: ${runError.message}`);
+			}
+		}
 	} finally {
 		try {
 			writeTranscriptMarkdown(job, runError);
@@ -600,6 +629,7 @@ function startDownload(request) {
 			// The source URL was already validated; this is only a defensive guard.
 		}
 	}
+	const fallbackArgs = [...args, downloadUrl, '-o', outputTemplate];
 	if (extractTranscript) {
 		args.push(
 			'--write-subs',
@@ -634,6 +664,7 @@ function startDownload(request) {
 		transcriptPath,
 		extractTranscript,
 		temporaryCookieFile: cookieSetup.temporaryCookieFile,
+		fallbackArgs: extractTranscript ? fallbackArgs : [],
 	};
 	writePendingTranscriptMarkdown(job);
 	fs.writeFileSync(jobPath, JSON.stringify(job, null, 2), 'utf8');

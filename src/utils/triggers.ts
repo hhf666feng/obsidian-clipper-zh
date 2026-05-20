@@ -20,12 +20,7 @@ const memoizedInternalMatchPattern = memoize(
 		}
 	},
 	{
-		resolver: (pattern: string, url: string) => {
-			if (pattern.startsWith('/') && pattern.endsWith('/')) {
-				return `${pattern}:${url}`;
-			}
-			return `${pattern}:${url.split('/').slice(0, 3).join('/')}`;
-		}
+		resolver: (pattern: string, url: string) => `${pattern}:${url}`
 	}
 );
 
@@ -56,15 +51,16 @@ class Trie {
 	findLongestMatch(url: string, schemaOrgData: any): TriggerMatch | null {
 		let node = this.root;
 		let lastMatch: TriggerMatch | null = null;
+		let prefix = '';
 		for (const char of url) {
+			prefix += char;
 			if (!node.children.has(char)) break;
 			node = node.children.get(char)!;
 			if (node.templates.length > 0) {
-				const matchingTemplate = node.templates.find(t => 
-					memoizedInternalMatchPattern(url.slice(0, url.indexOf(char) + 1), url, schemaOrgData)
-				);
-				if (matchingTemplate) {
-					lastMatch = matchingTemplate;
+				if (memoizedInternalMatchPattern(prefix, url, schemaOrgData)) {
+					lastMatch = node.templates
+						.slice()
+						.sort((a, b) => b.priority - a.priority)[0];
 				}
 			}
 		}

@@ -119,6 +119,7 @@ function collectLiveVideoDownloadUrl(pageUrl: string): string {
 	browser.runtime.sendMessage({ action: "contentScriptLoaded" });
 
 	interface ContentResponse {
+		url: string;
 		content: string;
 		selectedHtml: string;
 		extractedContent: { [key: string]: string };
@@ -310,6 +311,7 @@ function collectLiveVideoDownloadUrl(pageUrl: string): string {
 				const cleanedHtml = doc.documentElement.outerHTML;
 
 				const response: ContentResponse = {
+					url: document.URL,
 					author: defuddled.author,
 					content: defuddled.content,
 					description: defuddled.description,

@@ -4,7 +4,7 @@ import browser from '../utils/browser-polyfill';
 import { generalSettings } from '../utils/storage-utils';
 import { addPropertyType } from './property-types-manager';
 import { getMessage } from '../utils/i18n';
-import { createVideoClipTemplate } from '../utils/video-clipping';
+import { createVideoClipTemplate, syncVideoClipTemplate } from '../utils/video-clipping';
 
 export let templates: Template[] = [];
 export let editingTemplateIndex = -1;
@@ -76,18 +76,21 @@ export async function loadTemplates(): Promise<Template[]> {
 
 function ensureVideoClipTemplate(): boolean {
 	const videoTemplate = createVideoClipTemplate();
-	if (!generalSettings.videoClipping.enableVideoTemplate) {
-		videoTemplate.triggers = [];
-	}
-
 	const existing = templates.find(template => template.id === videoTemplate.id);
 	if (existing) {
-		const nextTriggers = videoTemplate.triggers;
-		if (JSON.stringify(existing.triggers || []) !== JSON.stringify(nextTriggers)) {
-			existing.triggers = nextTriggers;
+		const { template: syncedTemplate, changed } = syncVideoClipTemplate(
+			existing,
+			generalSettings.videoClipping.enableVideoTemplate,
+		);
+		if (changed) {
+			Object.assign(existing, syncedTemplate);
 			return true;
 		}
 		return false;
+	}
+
+	if (!generalSettings.videoClipping.enableVideoTemplate) {
+		videoTemplate.triggers = [];
 	}
 	templates.splice(Math.min(1, templates.length), 0, videoTemplate);
 	return true;

@@ -95,6 +95,24 @@ describe('buildVariables', () => {
 		expect(vars['{{words}}']).toBe('0');
 	});
 
+	test('drops YouTube page URLs when Defuddle reports them as the primary image', () => {
+		const vars = buildVariables(makeParams({
+			url: 'https://www.youtube.com/playlist?list=PLmWCw1CzcFilebjK89WLb5cAvM8K0cLB3',
+			image: 'https://www.youtube.com/watch?v=embed',
+		}));
+
+		expect(vars['{{image}}']).toBe('');
+	});
+
+	test('keeps YouTube thumbnail URLs as the primary image', () => {
+		const vars = buildVariables(makeParams({
+			url: 'https://www.youtube.com/watch?v=abc123',
+			image: 'https://i.ytimg.com/vi/abc123/maxresdefault.jpg',
+		}));
+
+		expect(vars['{{image}}']).toBe('https://i.ytimg.com/vi/abc123/maxresdefault.jpg');
+	});
+
 	test('takes first element of comma-separated published field', () => {
 		const vars = buildVariables(makeParams({
 			published: '2024-01-15, 2024-02-20',

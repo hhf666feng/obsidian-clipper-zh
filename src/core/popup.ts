@@ -694,14 +694,25 @@ async function refreshFields(tabId: number, { checkTemplateTriggers = true, rebu
 		// Start content extraction (don't await yet)
 		const extractionPromise = memoizedExtractPageContent(tabId);
 
-		// Match URL/regex triggers immediately (schema triggers will await extraction)
+		let extractedData: Awaited<ReturnType<typeof memoizedExtractPageContent>> | null = null;
+
+		// Match URL/regex triggers immediately when possible. If the tab URL
+		// has been canonicalized differently than the page's document.URL,
+		// retry after extraction with the content script's URL.
 		if (checkTemplateTriggers) {
 			const getSchemaOrgData = async () => {
-				const data = await extractionPromise;
-				return data?.schemaOrgData;
+				extractedData = extractedData ?? await extractionPromise;
+				return extractedData?.schemaOrgData;
 			};
 
-			const matchedTemplate = await findMatchingTemplate(tab.url, getSchemaOrgData);
+			let matchedTemplate = await findMatchingTemplate(tab.url, getSchemaOrgData);
+			if (!matchedTemplate) {
+				extractedData = extractedData ?? await extractionPromise;
+				const contentUrl = extractedData?.url || tab.url;
+				if (contentUrl !== tab.url) {
+					matchedTemplate = await findMatchingTemplate(contentUrl, getSchemaOrgData);
+				}
+			}
 			if (matchedTemplate) {
 				console.log('Matched template:', matchedTemplate);
 				currentTemplate = matchedTemplate;
@@ -714,9 +725,9 @@ async function refreshFields(tabId: number, { checkTemplateTriggers = true, rebu
 			setupMetadataToggle();
 		}
 
-		const extractedData = await extractionPromise;
+		extractedData = extractedData ?? await extractionPromise;
 		if (extractedData) {
-			const currentUrl = tab.url;
+			const currentUrl = extractedData.url || tab.url;
 
 			const initializedContent = await initializePageContent(
 				extractedData.content,
@@ -745,7 +756,8 @@ async function refreshFields(tabId: number, { checkTemplateTriggers = true, rebu
 					tabId,
 					currentTemplate,
 					initializedContent.currentVariables,
-					extractedData.schemaOrgData
+					extractedData.schemaOrgData,
+					currentUrl,
 				);
 
 				// Update variables panel if it's open
@@ -898,10 +910,10 @@ function buildTemplateFieldsSkeleton(template: Template | null) {
 	}
 }
 
-async function fillTemplateFieldValues(currentTabId: number, template: Template | null, variables: { [key: string]: string }, schemaOrgData?: any) {
+async function fillTemplateFieldValues(currentTabId: number, template: Template | null, variables: { [key: string]: string }, schemaOrgData?: any, pageUrl?: string) {
 	if (!template) return;
 
-	const currentUrl = currentTabId ? (await getTabInfo(currentTabId)).url || '' : '';
+	const currentUrl = pageUrl || (currentTabId ? (await getTabInfo(currentTabId)).url || '' : '');
 
 	currentVariables = variables;
 

@@ -178,6 +178,38 @@ describe('video download requests', () => {
 		expect(request?.cookieFile).toBe('');
 	});
 
+	test('does not send pure YouTube playlist URLs to the native downloader', () => {
+		const request = buildVideoDownloadRequest(
+			{
+				'{{videoPlatform}}': 'youtube',
+				'{{videoUrl}}': 'https://www.youtube.com/playlist?list=PLmWCw1CzcFilebjK89WLb5cAvM8K0cLB3',
+				'{{videoTitle}}': 'Claude Code 101',
+			},
+			{
+				...DEFAULT_VIDEO_CLIPPING_SETTINGS,
+				autoDownload: true,
+			},
+		);
+
+		expect(request).toBeNull();
+	});
+
+	test('allows YouTube watch URLs with playlist context for native download', () => {
+		const request = buildVideoDownloadRequest(
+			{
+				'{{videoPlatform}}': 'youtube',
+				'{{videoUrl}}': 'https://www.youtube.com/watch?v=0kILa02vKuI&list=PLmWCw1CzcFilebjK89WLb5cAvM8K0cLB3&index=4',
+				'{{videoTitle}}': 'Claude Code 101',
+			},
+			{
+				...DEFAULT_VIDEO_CLIPPING_SETTINGS,
+				autoDownload: true,
+			},
+		);
+
+		expect(request?.url).toBe('https://www.youtube.com/watch?v=0kILa02vKuI&list=PLmWCw1CzcFilebjK89WLb5cAvM8K0cLB3&index=4');
+	});
+
 	test('does not build a request when auto download is disabled or variables are not from a video page', () => {
 		const variables = {
 			'{{videoPlatform}}': 'youtube',
@@ -357,6 +389,52 @@ describe('video download requests', () => {
 		expect(response.ok).toBe(true);
 		const logText = await waitForText(response.logPath, 'best[height<=720]');
 		expect(logText).toContain('-f best[height<=720][ext=mp4]/bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]/best');
+	});
+
+	test('native host retries YouTube video download without subtitles when subtitle download is rate limited', async () => {
+		const homeDirectory = makeTempDirectory();
+		const outputDirectory = makeTempDirectory();
+		const fakeYtdlp = path.join(homeDirectory, 'fake-yt-dlp.sh');
+		writeFileSync(fakeYtdlp, [
+			'#!/bin/sh',
+			'out=""',
+			'prev=""',
+			'has_subs=0',
+			'for arg in "$@"; do',
+			'  if [ "$arg" = "--write-subs" ]; then has_subs=1; fi',
+			'  if [ "$prev" = "-o" ]; then out="$arg"; fi',
+			'  prev="$arg"',
+			'done',
+			'if [ "$has_subs" = "1" ]; then',
+			'  echo "ERROR: Unable to download video subtitles for zh-Hans: HTTP Error 429: Too Many Requests" >&2',
+			'  exit 1',
+			'fi',
+			'base="${out%.%(ext)s}"',
+			'printf "video" > "$base.mp4"',
+			'exit 0',
+			'',
+		].join('\n'));
+		chmodSync(fakeYtdlp, 0o755);
+
+		const response = await runNativeHost({
+			type: 'download-video',
+			version: 1,
+			url: 'https://www.youtube.com/watch?v=IkaPHiMDazM',
+			title: 'Hooks in Claude Code',
+			platform: 'youtube',
+			outputDirectory,
+			executable: fakeYtdlp,
+			extractTranscript: true,
+			cookieMode: 'none',
+		}, { HOME: homeDirectory });
+
+		expect(response.ok).toBe(true);
+		expect(await waitForFile(response.outputPath)).toBe(true);
+		const logText = await waitForText(response.logPath, 'Video download succeeded without subtitles');
+		expect(logText).toContain('Unable to download video subtitles');
+		expect(logText).toContain('retrying video download without subtitle options');
+		expect(logText).toContain('Video download succeeded without subtitles');
+		expect(readFileSync(response.transcriptPath, 'utf8')).toContain('状态：暂未生成');
 	});
 
 	test('native host prefers Homebrew yt-dlp over older PATH shims', async () => {

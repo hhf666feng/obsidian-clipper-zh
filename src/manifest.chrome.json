@@ -3,8 +3,8 @@
 	"default_locale": "zh_CN",
 	"name": "Obsidian Web Clipper",
 	"homepage_url": "https://obsidian.md/",
-	"version": "1.6.2.5",
-	"version_name": "1.6.2-zh.5",
+	"version": "1.6.2.11",
+	"version_name": "1.6.2-zh.11",
 	"key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5Sf+cy/+ImtjtbTocVNhBntn2qzXz/L8UAFMqAL6ue1tM296A3s4odKyM01h8vp8gVpcRtdAarqOhtc0vp9WAZpNLWV70VF2QwSE+z1fodCbfm0pcohPbqRuXSPdMr/DdNdOUyO0WryfG7YFgWBaCF4GEMP6Nv8b8rc5DVQETLz4DbRdmMNiO4C8js9nFbqIJc14kLU9+IEJ/wumVblrJeykLXwneGVmL5ZLO6xM+YCKPi5ZqxtxoojRQynH9cuVbjJggTKyNGQxPcdigmqCyRUXCoc3n8hlufRrTxdn/ZbDAd9IgbP10ts4CyjCOHEShoXKkrKtm3cjhEJgL9w+EQIDAQAB",
 	"description": "保存和高亮网页内容，修复微信公众号图片保存，并支持 B 站、抖音、YouTube 视频一键剪切。内容以 Markdown 存入 Obsidian，便于离线阅读和长期归档。",
 	"permissions": [

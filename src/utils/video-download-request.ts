@@ -69,6 +69,23 @@ function renderDirectoryTemplate(template: string, replacements: Record<string, 
 	);
 }
 
+function isSingleVideoDownloadUrl(urlValue: string, platform: string): boolean {
+	if (platform !== 'youtube') return true;
+	try {
+		const url = new URL(urlValue);
+		const host = url.hostname.replace(/^www\./, '');
+		if (host === 'youtu.be') return url.pathname.split('/').filter(Boolean).length > 0;
+		if (host !== 'youtube.com' && host !== 'm.youtube.com') return true;
+		if (url.pathname === '/watch') return Boolean(url.searchParams.get('v'));
+		if (url.pathname.startsWith('/shorts/') || url.pathname.startsWith('/live/')) {
+			return Boolean(url.pathname.split('/').filter(Boolean)[1]);
+		}
+		return false;
+	} catch {
+		return false;
+	}
+}
+
 export function buildVideoDownloadRequest(
 	variables: Record<string, string>,
 	settings: VideoClippingSettings,
@@ -85,6 +102,9 @@ export function buildVideoDownloadRequest(
 	const userAgent = (variables['{{videoUserAgent}}'] || '').trim();
 	const title = (variables['{{videoTitle}}'] || variables['{{title}}'] || '').trim();
 	if (!platform || !url || !title) {
+		return null;
+	}
+	if (!isSingleVideoDownloadUrl(url, platform)) {
 		return null;
 	}
 

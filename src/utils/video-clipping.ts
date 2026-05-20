@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import { Template, VideoClippingSettings } from '../types/types';
 
 export type VideoPlatform = '' | 'bilibili' | 'douyin' | 'youtube';
+export const VIDEO_CLIP_TEMPLATE_ID = 'builtin-video-clip';
 
 export interface VideoClipData {
 	platform: Exclude<VideoPlatform, ''>;
@@ -1029,7 +1030,7 @@ export function buildVideoVariables(
 
 export function createVideoClipTemplate(): Template {
 	return {
-		id: 'builtin-video-clip',
+		id: VIDEO_CLIP_TEMPLATE_ID,
 		name: '视频剪切',
 		behavior: 'create',
 		noteNameFormat: '{{videoAuthor}} - {{videoTitle}}',
@@ -1088,4 +1089,17 @@ export function createVideoClipTemplate(): Template {
 			'https://youtu.be/',
 		],
 	};
+}
+
+export function syncVideoClipTemplate(existing: Template, enableTriggers: boolean): { template: Template; changed: boolean } {
+	const canonical = createVideoClipTemplate();
+	const next: Template = {
+		...canonical,
+		triggers: enableTriggers ? canonical.triggers : [],
+		vault: existing.vault,
+		context: existing.context,
+	};
+
+	const changed = JSON.stringify(existing) !== JSON.stringify(next);
+	return { template: next, changed };
 }
