@@ -472,6 +472,44 @@ describe('video download requests', () => {
 		expect(logText).not.toContain('old-shim');
 	});
 
+	test('native host logs stale yt-dlp versions for extractor failures', async () => {
+		const homeDirectory = makeTempDirectory();
+		const outputDirectory = makeTempDirectory();
+		const ytdlpDirectory = path.join(homeDirectory, 'bin');
+		mkdirSync(ytdlpDirectory, { recursive: true });
+		const ytdlp = path.join(ytdlpDirectory, 'yt-dlp');
+		writeFileSync(ytdlp, [
+			'#!/bin/sh',
+			'if [ "$1" = "--version" ]; then',
+			'  echo "2026.03.17"',
+			'  exit 0',
+			'fi',
+			'echo download "$@"',
+			'exit 0',
+			'',
+		].join('\n'));
+		chmodSync(ytdlp, 0o755);
+
+		const response = await runNativeHost({
+			type: 'download-video',
+			version: 1,
+			url: 'https://www.douyin.com/video/7641075463875464489',
+			title: 'Demo video',
+			platform: 'douyin',
+			outputDirectory,
+			executable: 'yt-dlp',
+		}, {
+			HOME: homeDirectory,
+			PATH: ytdlpDirectory,
+			OBSIDIAN_CLIPPER_YTDLP_PREFERRED_PATHS: ytdlp,
+		});
+
+		expect(response.ok).toBe(true);
+		const logText = await waitForText(response.logPath, 'yt-dlp appears', 2000);
+		expect(logText).toContain('yt-dlp version: 2026.03.17');
+		expect(logText).toContain('if a platform extractor fails, upgrade yt-dlp first');
+	});
+
 	test('native host forces overwriting stale video files on retry', async () => {
 		const homeDirectory = makeTempDirectory();
 		const outputDirectory = makeTempDirectory();
@@ -658,6 +696,10 @@ describe('video download requests', () => {
 		expect(response.outputPath).toBe(path.join(vaultRoot, '99-Assets', 'Clippings', 'Videos', '真正的抖音视频文案.mp4'));
 		expect(response.embedMarkdown).toBe('![[99-Assets/Clippings/Videos/真正的抖音视频文案.mp4]]');
 		expect(response.transcriptMarkdown).toBe('![[99-Assets/Clippings/Videos/真正的抖音视频文案.transcript.md|打开文稿]]');
+		expect(response.downloadSource).toBe('direct');
+		expect(response.sourceUrl).toBe('https://www.douyin.com/aweme/v1/play/?video_id=v0200fg10000example&is_play_url=1');
+		expect(response.pageUrl).toBe('https://www.douyin.com/video/7340000000000000000');
+		expect(response.cookieSource).toBe('browser-database');
 		expect(await waitForFile(response.outputPath)).toBe(true);
 		const transcriptText = await waitForText(response.transcriptPath, '第二句抖音字幕');
 		expect(transcriptText).toContain('第一句抖音字幕\n第二句抖音字幕');

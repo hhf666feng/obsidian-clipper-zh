@@ -4,7 +4,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 
 const DEFAULT_SUBTITLE_LANGUAGES = 'all,-live_chat,-danmaku';
 const YOUTUBE_ARCHIVE_FORMAT = 'best[height<=720][ext=mp4]/bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]/best';
@@ -252,6 +252,29 @@ function resolveExecutable(candidates) {
 		throw new Error(`Executable not found: ${candidates.join(', ')}`);
 	}
 	return executable;
+}
+
+function ytdlpAgeWarning(versionText, now = new Date()) {
+	const match = String(versionText || '').trim().match(/^(\d{4})\.(\d{2})\.(\d{2})$/);
+	if (!match) return '';
+	const publishedAt = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+	const ageDays = Math.floor((now.getTime() - publishedAt.getTime()) / (24 * 60 * 60 * 1000));
+	if (!Number.isFinite(ageDays) || ageDays <= 45) return '';
+	return `yt-dlp appears ${ageDays} days old; if a platform extractor fails, upgrade yt-dlp first.`;
+}
+
+function logYtdlpVersionIfRelevant(executable, logPath) {
+	if (path.basename(executable) !== 'yt-dlp') return;
+	const result = spawnSync(executable, ['--version'], {
+		encoding: 'utf8',
+		timeout: 3000,
+	});
+	const versionText = String(result.stdout || result.stderr || '').trim().split(/\r?\n/)[0] || 'unknown';
+	appendLogLine(logPath, `yt-dlp version: ${versionText}`);
+	const warning = ytdlpAgeWarning(versionText);
+	if (warning) {
+		appendLogLine(logPath, `WARNING: ${warning}`);
+	}
 }
 
 function cookieField(value) {
@@ -611,6 +634,7 @@ function startDownload(request) {
 	const extractTranscript = Boolean(request.extractTranscript);
 	const logPath = createLogPath();
 	const resolvedExecutable = resolveExecutable(executableCandidates(executable));
+	logYtdlpVersionIfRelevant(resolvedExecutable, logPath);
 	const args = ['--no-playlist', '--force-overwrites', '--no-continue', '--merge-output-format', 'mp4'];
 	if (isYouTubeRequest(request, url)) {
 		args.push('-f', YOUTUBE_ARCHIVE_FORMAT);
@@ -649,6 +673,8 @@ function startDownload(request) {
 	}
 	if (downloadUrl !== url) {
 		appendLogLine(logPath, 'Using direct video URL extracted from the current page');
+	} else {
+		appendLogLine(logPath, 'Using page URL; yt-dlp must extract the media URL itself');
 	}
 	const job = {
 		executable: resolvedExecutable,
@@ -678,6 +704,11 @@ function startDownload(request) {
 			outputPath,
 			vaultRelativeOutputPath: relativeOutputPath,
 			embedMarkdown: relativeOutputPath ? `![[${relativeOutputPath}]]` : '',
+			pageUrl: url,
+			sourceUrl: downloadUrl,
+			downloadSource: downloadUrl !== url ? 'direct' : 'page',
+			cookieSource: cookieSetup.source,
+			cookieCount: cookieSetup.count,
 			transcriptPath: extractTranscript ? transcriptPath : '',
 			vaultRelativeTranscriptPath: extractTranscript ? relativeTranscriptPath : '',
 			transcriptMarkdown: extractTranscript && relativeTranscriptPath ? `![[${relativeTranscriptPath}|打开文稿]]` : '',

@@ -16,6 +16,11 @@ export interface VideoDownloadResponse {
 	outputPath?: string;
 	vaultRelativeOutputPath?: string;
 	embedMarkdown?: string;
+	pageUrl?: string;
+	sourceUrl?: string;
+	downloadSource?: 'direct' | 'page';
+	cookieSource?: string;
+	cookieCount?: number;
 	transcriptPath?: string;
 	vaultRelativeTranscriptPath?: string;
 	transcriptMarkdown?: string;

@@ -626,7 +626,7 @@ function showError(messageKey: string): void {
 	const clipper = document.querySelector('.clipper') as HTMLElement;
 
 	if (errorMessage && clipper) {
-		errorMessage.textContent = getMessage(messageKey);
+		errorMessage.textContent = getMessage(messageKey) || messageKey;
 		errorMessage.style.display = 'flex';
 		clipper.style.display = 'none';
 
@@ -696,23 +696,16 @@ async function refreshFields(tabId: number, { checkTemplateTriggers = true, rebu
 
 		let extractedData: Awaited<ReturnType<typeof memoizedExtractPageContent>> | null = null;
 
-		// Match URL/regex triggers immediately when possible. If the tab URL
-		// has been canonicalized differently than the page's document.URL,
-		// retry after extraction with the content script's URL.
+		// Match URL/regex triggers immediately when possible. Do not await
+		// extraction here for a content-URL retry; ordinary pages need the
+		// template skeleton rendered before extraction finishes.
 		if (checkTemplateTriggers) {
 			const getSchemaOrgData = async () => {
 				extractedData = extractedData ?? await extractionPromise;
 				return extractedData?.schemaOrgData;
 			};
 
-			let matchedTemplate = await findMatchingTemplate(tab.url, getSchemaOrgData);
-			if (!matchedTemplate) {
-				extractedData = extractedData ?? await extractionPromise;
-				const contentUrl = extractedData?.url || tab.url;
-				if (contentUrl !== tab.url) {
-					matchedTemplate = await findMatchingTemplate(contentUrl, getSchemaOrgData);
-				}
-			}
+			const matchedTemplate = await findMatchingTemplate(tab.url, getSchemaOrgData);
 			if (matchedTemplate) {
 				console.log('Matched template:', matchedTemplate);
 				currentTemplate = matchedTemplate;
@@ -728,6 +721,18 @@ async function refreshFields(tabId: number, { checkTemplateTriggers = true, rebu
 		extractedData = extractedData ?? await extractionPromise;
 		if (extractedData) {
 			const currentUrl = extractedData.url || tab.url;
+			if (checkTemplateTriggers && currentUrl !== tab.url) {
+				const matchedTemplate = await findMatchingTemplate(currentUrl, async () => extractedData?.schemaOrgData);
+				if (matchedTemplate && matchedTemplate.id !== currentTemplate?.id) {
+					console.log('Matched template from content URL:', matchedTemplate);
+					currentTemplate = matchedTemplate;
+					updateTemplateDropdown();
+					if (rebuildSkeleton) {
+						buildTemplateFieldsSkeleton(currentTemplate);
+						setupMetadataToggle();
+					}
+				}
+			}
 
 			const initializedContent = await initializePageContent(
 				extractedData.content,

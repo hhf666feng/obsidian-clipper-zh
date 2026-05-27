@@ -24,6 +24,17 @@ export function appendVideoDownloadLocation(noteContent: string, response: Video
 		'- 下载状态：已提交到本机后台下载',
 	);
 
+	if (response.downloadSource === 'direct') {
+		lines.push('- 下载方式：页面直链（优先，绕过 yt-dlp 页面解析）');
+	} else if (response.downloadSource === 'page') {
+		lines.push('- 下载方式：页面地址（由 yt-dlp 解析媒体地址）');
+	}
+	if (response.cookieSource) {
+		const cookieDetail = response.cookieSource === 'current-browser' && typeof response.cookieCount === 'number'
+			? `，${response.cookieCount} 个 Cookie`
+			: '';
+		lines.push(`- Cookie 来源：${response.cookieSource}${cookieDetail}`);
+	}
 	if (response.logPath) {
 		lines.push(`- 下载日志：${inlineCode(response.logPath)}`);
 	}

@@ -326,6 +326,17 @@ describe('video clipping', () => {
 		], 'douyin', 'https://www.douyin.com/video/7625484359843319083', { minStartedAt: 2000 })).toBe(currentVideoUrl);
 	});
 
+	test('falls back to already-loaded Douyin media when no fresh route entries exist', () => {
+		const loadedBeforeClipUrl = 'https://v26-web.douyinvod.com/current/media-video-hvc1/?mime_type=video_mp4';
+
+		expect(findBestScopedVideoDownloadUrl([
+			{ url: loadedBeforeClipUrl, startedAt: 1200 },
+		], 'douyin', 'https://www.douyin.com/video/7625484359843319083', {
+			minStartedAt: 2000,
+			allowOlderFallback: true,
+		})).toBe(loadedBeforeClipUrl);
+	});
+
 	test('does not treat YouTube tracking requests as direct video downloads', () => {
 		const trackingUrl = 'https://www.youtube.com/ptracking?html5=1&video_id=NpXk6bQwWrE&pltype=content';
 

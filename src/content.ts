@@ -47,7 +47,10 @@ function collectLiveVideoDownloadUrl(pageUrl: string): string {
 		// Some embedded contexts can restrict performance entries.
 	}
 
-	return findBestScopedVideoDownloadUrl(candidates, platform, pageUrl, { minStartedAt: routeStartedAt });
+	return findBestScopedVideoDownloadUrl(candidates, platform, pageUrl, {
+		minStartedAt: routeStartedAt,
+		allowOlderFallback: true,
+	});
 }
 
 // IIFE to scope variables and allow safe re-execution

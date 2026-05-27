@@ -117,6 +117,7 @@ export interface ScopedVideoDownloadCandidate {
 
 export interface ScopedVideoDownloadOptions {
 	minStartedAt?: number;
+	allowOlderFallback?: boolean;
 }
 
 function douyinVideoIdFromUrl(urlValue: string): string {
@@ -149,14 +150,23 @@ export function findBestScopedVideoDownloadUrl(
 	pageUrl: string,
 	options: ScopedVideoDownloadOptions = {},
 ): string {
-	return findBestVideoDownloadUrl(
-		candidates
-			.filter(candidate => candidate.url)
+	const scopedCandidates = candidates
+		.filter(candidate => candidate.url)
+		.filter(candidate => isScopedToCurrentVideo(candidate, platform, pageUrl));
+	const bestFreshUrl = findBestVideoDownloadUrl(
+		scopedCandidates
 			.filter(candidate => typeof options.minStartedAt !== 'number'
 				|| typeof candidate.startedAt !== 'number'
 				|| candidate.startedAt >= options.minStartedAt)
-			.filter(candidate => isScopedToCurrentVideo(candidate, platform, pageUrl))
 			.map(candidate => candidate.url),
+		platform,
+		pageUrl,
+	);
+	if (bestFreshUrl || !options.allowOlderFallback || typeof options.minStartedAt !== 'number') {
+		return bestFreshUrl;
+	}
+	return findBestVideoDownloadUrl(
+		scopedCandidates.map(candidate => candidate.url),
 		platform,
 		pageUrl,
 	);

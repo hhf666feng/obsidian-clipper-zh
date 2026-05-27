@@ -9,6 +9,9 @@ describe('video download note annotation', () => {
 			outputTemplate: '/Users/admin/Documents/Obsidian Vault/99-Assets/Clippings/Videos/Demo.%(ext)s',
 			vaultRelativeOutputPath: '99-Assets/Clippings/Videos/Demo.mp4',
 			embedMarkdown: '![[99-Assets/Clippings/Videos/Demo.mp4]]',
+			downloadSource: 'direct',
+			cookieSource: 'current-browser',
+			cookieCount: 62,
 			transcriptPath: '/Users/admin/Documents/Obsidian Vault/99-Assets/Clippings/Videos/Demo.transcript.md',
 			vaultRelativeTranscriptPath: '99-Assets/Clippings/Videos/Demo.transcript.md',
 			transcriptMarkdown: '![[99-Assets/Clippings/Videos/Demo.transcript.md|打开文稿]]',
@@ -18,6 +21,8 @@ describe('video download note annotation', () => {
 		expect(content).toContain('## 本地视频');
 		expect(content).toContain('![[99-Assets/Clippings/Videos/Demo.mp4]]');
 		expect(content).toContain('保存位置：`/Users/admin/Documents/Obsidian Vault/99-Assets/Clippings/Videos/Demo.mp4`');
+		expect(content).toContain('下载方式：页面直链');
+		expect(content).toContain('Cookie 来源：current-browser，62 个 Cookie');
 		expect(content).toContain('下载日志：`/Users/admin/.obsidian-clipper-zh/logs/video-download.log`');
 		expect(content).toContain('文稿状态：平台提供字幕或自动字幕时，下载完成后会自动生成');
 		expect(content).toContain('文稿位置：`/Users/admin/Documents/Obsidian Vault/99-Assets/Clippings/Videos/Demo.transcript.md`');
