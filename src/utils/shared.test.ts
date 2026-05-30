@@ -175,6 +175,27 @@ describe('buildVariables', () => {
 		expect(vars['{{videoSummary}}']).not.toContain('相关推荐');
 	});
 
+	test('builds minimal Bilibili video variables when page extraction has no HTML metadata', () => {
+		const vars = buildVariables(makeParams({
+			url: 'https://www.bilibili.com/video/BV1KMQnBFEHu/?spm_id_from=333.337.search-card.all.click&vd_source=13e32190a48660ccde5a27f6c3760d83',
+			title: 'Bilibili clip fallback',
+			author: '',
+			content: '',
+			contentHtml: '',
+			fullHtml: '',
+			description: '',
+			image: '',
+			published: '',
+			site: '哔哩哔哩',
+			wordCount: 0,
+		}));
+
+		expect(vars['{{videoPlatform}}']).toBe('bilibili');
+		expect(vars['{{videoUrl}}']).toBe('https://www.bilibili.com/video/BV1KMQnBFEHu');
+		expect(vars['{{videoTitle}}']).toBe('Bilibili clip fallback');
+		expect(vars['{{videoDownloadCommand}}']).toBe('yt-dlp "https://www.bilibili.com/video/BV1KMQnBFEHu" -o "Bilibili clip fallback.%(ext)s"');
+	});
+
 	test('produces date and time in ISO-like format', () => {
 		const vars = buildVariables(makeParams());
 		// Both should be identical timestamps

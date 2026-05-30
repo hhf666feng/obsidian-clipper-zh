@@ -13,6 +13,7 @@ import {
 	wrapTextWithMark
 } from './dom-utils';
 import { normalizeLazyLoadedImagesInHtml } from './lazy-images';
+import { getDomain } from './string-utils';
 
 // Define ElementHighlightData type inline since it's not exported from highlighter.ts
 interface ElementHighlightData extends HighlightData {
@@ -44,7 +45,7 @@ function normalizeText(html: string): string {
 	return stripHtml(html).replace(/\s+/g, ' ').trim();
 }
 
-interface ContentResponse {
+export interface ContentResponse {
 	url?: string;
 	content: string;
 	selectedHtml: string;
@@ -79,7 +80,7 @@ async function sendExtractRequest(tabId: number): Promise<ContentResponse> {
 		throw new Error(response.error);
 	}
 
-	if (response && response.content) {
+	if (response && typeof response === 'object' && 'content' in response) {
 		// Ensure highlights are of the correct type
 		if (response.highlights && Array.isArray(response.highlights)) {
 			response.highlights = response.highlights.map((highlight: string | AnyHighlightData) => {
@@ -104,6 +105,37 @@ async function sendExtractRequest(tabId: number): Promise<ContentResponse> {
 	throw new Error('No content received from page');
 }
 
+function fallbackContentFromTab(tab: { url?: string; title?: string }, error: unknown): ContentResponse {
+	const url = tab.url || '';
+	const title = tab.title || getDomain(url) || 'Untitled';
+	const errorMessage = error instanceof Error ? error.message : String(error);
+	return {
+		url,
+		content: '',
+		selectedHtml: '',
+		extractedContent: {
+			extractionFallback: 'true',
+			extractionError: errorMessage,
+		},
+		schemaOrgData: null,
+		fullHtml: '',
+		rawHtml: '',
+		highlights: [],
+		title,
+		author: '',
+		description: '',
+		domain: getDomain(url),
+		favicon: '',
+		image: '',
+		parseTime: 0,
+		published: '',
+		site: getDomain(url),
+		wordCount: 0,
+		language: '',
+		metaTags: [],
+	};
+}
+
 export async function extractPageContent(tabId: number): Promise<ContentResponse | null> {
 	try {
 		return await sendExtractRequest(tabId);
@@ -122,7 +154,8 @@ export async function extractPageContent(tabId: number): Promise<ContentResponse
 			return await sendExtractRequest(tabId);
 		} catch (retryError) {
 			console.error('[Obsidian Clipper] Extraction failed after retry:', retryError);
-			throw new Error('Web Clipper was not able to start. Please try reloading the page.');
+			const tab = await browser.tabs.get(tabId).catch(() => ({}));
+			return fallbackContentFromTab(tab, retryError);
 		}
 	}
 }

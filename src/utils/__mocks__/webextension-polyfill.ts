@@ -1,4 +1,3 @@
-// Mock for webextension-polyfill in test environment
 export const runtime = {
 	getURL: (path: string) => `chrome-extension://mock-id/${path}`,
 	sendMessage: async () => ({}),
@@ -31,6 +30,7 @@ export const __resetTabsQueryMock = () => {
 
 export const tabs = {
 	query: (...args: Parameters<typeof tabsQuery>) => tabsQuery(...args),
+	get: async () => ({}),
 	sendMessage: async () => ({}),
 };
 

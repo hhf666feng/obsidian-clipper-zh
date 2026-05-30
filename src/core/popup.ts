@@ -22,11 +22,12 @@ import { debounce } from '../utils/debounce';
 import { sanitizeFileName } from '../utils/string-utils';
 import { saveFile } from '../utils/file-utils';
 import { translatePage, getMessage, setupLanguageAndDirection } from '../utils/i18n';
-import { formatPropertyValue } from '../utils/shared';
+import { buildVariables, formatPropertyValue } from '../utils/shared';
 import { startNativeVideoDownload } from '../utils/video-native-downloader';
 import type { VideoDownloadResponse } from '../utils/video-native-downloader';
 import { appendVideoDownloadLocation } from '../utils/video-download-note';
 import { resolveFolderPathForUrl } from '../utils/folder-routing';
+import { detectVideoPlatform } from '../utils/video-clipping';
 
 interface ReaderModeResponse {
 	success: boolean;
@@ -775,9 +776,51 @@ async function refreshFields(tabId: number, { checkTemplateTriggers = true, rebu
 		}
 	} catch (error) {
 		console.error('Error refreshing fields:', error);
+		const tab = await getTabInfo(tabId).catch(() => null);
+		if (tab && await fillVideoFallbackFields(tabId, tab)) {
+			console.warn('Using video fallback fields after extraction failure:', error);
+			clearError();
+			return;
+		}
 		const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
 		showError(errorMessage);
 	}
+}
+
+async function fillVideoFallbackFields(tabId: number, tab: { id: number; url: string }): Promise<boolean> {
+	if (!detectVideoPlatform(tab.url)) return false;
+
+	const videoTemplate = templates.find(template => template.id === 'builtin-video-clip') || currentTemplate;
+	if (!videoTemplate) return false;
+
+	currentTemplate = videoTemplate;
+	updateTemplateDropdown();
+	buildTemplateFieldsSkeleton(currentTemplate);
+	setupMetadataToggle();
+
+	const title = await browser.tabs.get(tabId)
+		.then(activeTab => activeTab.title || 'Video')
+		.catch(() => 'Video');
+	const fallbackVariables = buildVariables({
+		title,
+		author: '',
+		content: '',
+		contentHtml: '',
+		url: tab.url,
+		fullHtml: '',
+		description: '',
+		favicon: '',
+		image: '',
+		published: '',
+		site: '',
+		language: '',
+		wordCount: 0,
+		videoClippingSettings: generalSettings.videoClipping,
+	});
+
+	await fillTemplateFieldValues(tabId, currentTemplate, fallbackVariables, null, fallbackVariables['{{videoUrl}}'] || tab.url);
+	updateVariablesPanel(currentTemplate, currentVariables);
+	return true;
 }
 
 function updateTemplateDropdown() {

@@ -488,6 +488,14 @@ function extractBilibiliVideo(input: VideoClipExtractionInput): Partial<VideoCli
 	};
 }
 
+function bvidFromUrl(urlValue: string): string {
+	try {
+		return new URL(urlValue).pathname.match(/\/video\/(BV[\da-z]+)/i)?.[1] || '';
+	} catch {
+		return '';
+	}
+}
+
 function valueAtPath(root: any, path: string[]): any {
 	let current = root;
 	for (const segment of path) {
@@ -957,7 +965,9 @@ function mergeVideoData(input: VideoClipExtractionInput, platform: Exclude<Video
 		description,
 		summary: summaryFrom(description, transcript),
 		transcript,
-		url: (platformData.url || input.url).replace(/#:~:text=[^&]+(&|$)/, ''),
+		url: (platform === 'bilibili' && !platformData.url && bvidFromUrl(input.url)
+			? `https://www.bilibili.com/video/${bvidFromUrl(input.url)}`
+			: platformData.url || input.url).replace(/#:~:text=[^&]+(&|$)/, ''),
 		downloadUrl: platformData.downloadUrl
 			|| findBestVideoDownloadUrl([input.extractedContent?.videoDownloadUrl || ''], platform, input.url),
 		userAgent: platformData.userAgent || input.extractedContent?.videoUserAgent || '',
