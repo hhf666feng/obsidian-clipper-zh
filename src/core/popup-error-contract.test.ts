@@ -47,4 +47,13 @@ describe('popup error contract', () => {
 		expect(source).toContain('window.addEventListener(\'unhandledrejection\', handleBootstrapError);');
 		expect(source).toContain('recoverBootstrapError(event);');
 	});
+
+	test('loads an independent bootstrap fallback before the popup module', () => {
+		const popupHtml = readFileSync(join(process.cwd(), 'src/popup.html'), 'utf8');
+		const webpackConfig = readFileSync(join(process.cwd(), 'webpack.config.js'), 'utf8');
+
+		expect(popupHtml).toContain('<script src="popup-bootstrap.js"></script>');
+		expect(popupHtml.indexOf('popup-bootstrap.js')).toBeLessThan(popupHtml.indexOf('popup.js'));
+		expect(webpackConfig).toContain('{ from: "src/popup-bootstrap.js", to: "popup-bootstrap.js" }');
+	});
 });
