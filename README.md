@@ -204,6 +204,16 @@ ls -lt ~/.obsidian-clipper-zh/logs | head
 
 如果输出 `has no subtitles` 或 `has no automatic captions`，说明平台没有公开可抓取字幕，扩展不会凭空生成转写。
 
+### 升级后仍出现 “Please try reloading the page”
+
+先确认 Chrome 实际加载的扩展包版本：
+
+```sh
+npm run diagnose:installed
+```
+
+如果输出里出现 `OUTDATED` 或 `MISSING_BOOTSTRAP`，说明浏览器仍在使用旧扩展目录。到 `chrome://extensions` 删除旧的 Obsidian Web Clipper，再从最新 release zip 解压目录重新 **Load unpacked**。
+
 ### 抖音仍保存到 `Clippings/Videos`
 
 升级到 `v1.6.2-zh.28` 后会补齐默认路由。也可以在设置页的“文件夹路由”中确认有这些规则：
