@@ -32,4 +32,10 @@ describe('popup error contract', () => {
 		expect(source).not.toContain("showFatalError('Some required fields are missing. Please try reloading the extension.');");
 		expect(source).toContain("showActionError('failedToSaveFile');");
 	});
+
+	test('marks successful template fallback rendering for diagnostics', () => {
+		const source = readFileSync(join(process.cwd(), 'src/core/popup.ts'), 'utf8');
+
+		expect(source).toContain("markPopupFallbackRendered(document, 'template');");
+	});
 });

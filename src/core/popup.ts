@@ -29,7 +29,7 @@ import { appendVideoDownloadLocation } from '../utils/video-download-note';
 import { resolveFolderPathForUrl } from '../utils/folder-routing';
 import { detectVideoPlatform } from '../utils/video-clipping';
 import { chooseFallbackTemplate, runOptionalStep } from '../utils/resilience';
-import { renderMinimalFallbackFields } from '../utils/popup-fallback';
+import { markPopupFallbackRendered, renderMinimalFallbackFields } from '../utils/popup-fallback';
 import { clearPopupError, showPopupError } from '../utils/popup-error-state';
 
 interface ReaderModeResponse {
@@ -844,6 +844,7 @@ async function fillFallbackFields(tabId: number, tab: { id: number; url: string;
 
 		await fillTemplateFieldValues(tabId, currentTemplate, fallbackVariables, null, fallbackVariables['{{videoUrl}}'] || tab.url);
 		updateVariablesPanel(currentTemplate, currentVariables);
+		markPopupFallbackRendered(document, 'template');
 		return true;
 	} catch (fallbackError) {
 		console.warn('Fallback template rendering failed; using minimal fields.', fallbackError);

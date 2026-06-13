@@ -4,6 +4,12 @@ export interface MinimalFallbackRenderOptions {
 	path?: string;
 }
 
+export function markPopupFallbackRendered(doc: Document, mode: 'template' | 'minimal'): void {
+	if (doc.body?.dataset) {
+		doc.body.dataset.fallbackRendered = mode;
+	}
+}
+
 function setInputValue(element: Element | null, value: string): boolean {
 	if (!element || !('value' in element)) return false;
 	(element as HTMLInputElement | HTMLTextAreaElement).value = value;
@@ -68,6 +74,7 @@ export function renderMinimalFallbackFields(options: MinimalFallbackRenderOption
 
 	doc.body?.classList.remove('has-error');
 	doc.body?.classList.remove('has-inline-error');
+	markPopupFallbackRendered(doc, 'minimal');
 
 	return noteNameOk && contentOk;
 }

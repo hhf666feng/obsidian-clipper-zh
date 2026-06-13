@@ -36,6 +36,7 @@ describe('renderMinimalFallbackFields', () => {
 		expect((document.querySelector('.error-message') as HTMLElement).style.display).toBe('none');
 		expect(document.body.classList.contains('has-error')).toBe(false);
 		expect(document.body.classList.contains('has-inline-error')).toBe(false);
+		expect(document.body.dataset.fallbackRendered).toBe('minimal');
 		expect((document.getElementById('title') as HTMLInputElement).value).toBe('Feishu doc');
 		expect((document.getElementById('source') as HTMLInputElement).value).toBe('https://my.feishu.cn/docx/UIYZdMT4Mo7wCFxkSXXcBacontf');
 	});
