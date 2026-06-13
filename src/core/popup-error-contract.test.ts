@@ -18,4 +18,11 @@ describe('popup error contract', () => {
 		expect(source).not.toContain("showFatalError(error instanceof Error ? error.message : 'Failed to initialize popup.');");
 		expect(source).not.toContain('showFatalError(errorMessage);');
 	});
+
+	test('recovers when base extension initialization fails after tab metadata is available', () => {
+		const source = readFileSync(join(process.cwd(), 'src/core/popup.ts'), 'utf8');
+
+		expect(source).not.toContain('if (!initialized) {\n\t\t\t\treturn;\n\t\t\t}');
+		expect(source).toContain("await recoverWithFallbackFields(currentTabId, tab, new Error('Failed to initialize extension.'), 'Failed to initialize popup.');");
+	});
 });

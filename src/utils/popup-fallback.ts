@@ -67,6 +67,7 @@ export function renderMinimalFallbackFields(options: MinimalFallbackRenderOption
 	}
 
 	doc.body?.classList.remove('has-error');
+	doc.body?.classList.remove('has-inline-error');
 
 	return noteNameOk && contentOk;
 }

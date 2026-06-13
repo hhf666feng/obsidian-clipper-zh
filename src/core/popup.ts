@@ -410,6 +410,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 		if (currentTabId) {
 			const initialized = await initializeExtension(currentTabId);
 			if (!initialized) {
+				await recoverWithFallbackFields(currentTabId, tab, new Error('Failed to initialize extension.'), 'Failed to initialize popup.');
 				return;
 			}
 

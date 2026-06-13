@@ -5,15 +5,17 @@ import { renderMinimalFallbackFields } from './popup-fallback';
 describe('renderMinimalFallbackFields', () => {
 	test('keeps the clipper editable when normal fallback rendering cannot run', () => {
 		const { document } = parseHTML(`
-			<body class="has-error">
-				<p class="error-message" style="display: flex;">Please try reloading the page.</p>
-				<div class="clipper" style="display: none;">
-					<textarea id="note-name-field"></textarea>
-					<div class="metadata-properties"></div>
-					<textarea id="note-content-field"></textarea>
-					<input id="path-name-field">
-				</div>
-			</body>
+			<html>
+				<body class="has-error has-inline-error">
+					<p class="error-message" style="display: flex;">Please try reloading the page.</p>
+					<div class="clipper" style="display: none;">
+						<textarea id="note-name-field"></textarea>
+						<div class="metadata-properties"></div>
+						<textarea id="note-content-field"></textarea>
+						<input id="path-name-field">
+					</div>
+				</body>
+			</html>
 		`);
 
 		const rendered = renderMinimalFallbackFields({
@@ -33,6 +35,7 @@ describe('renderMinimalFallbackFields', () => {
 		expect((document.querySelector('.clipper') as HTMLElement).style.display).toBe('block');
 		expect((document.querySelector('.error-message') as HTMLElement).style.display).toBe('none');
 		expect(document.body.classList.contains('has-error')).toBe(false);
+		expect(document.body.classList.contains('has-inline-error')).toBe(false);
 		expect((document.getElementById('title') as HTMLInputElement).value).toBe('Feishu doc');
 		expect((document.getElementById('source') as HTMLInputElement).value).toBe('https://my.feishu.cn/docx/UIYZdMT4Mo7wCFxkSXXcBacontf');
 	});
