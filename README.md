@@ -219,7 +219,13 @@ npm run diagnose:installed
 npm run prepare:chrome-unpacked
 ```
 
-然后到 `chrome://extensions` 删除旧的 Obsidian Web Clipper，重新 **Load unpacked**，选择 `builds/chrome-unpacked-current`。
+然后运行：
+
+```sh
+npm run open:chrome-extensions
+```
+
+在打开的 `chrome://extensions` 里删除旧的 Obsidian Web Clipper，重新 **Load unpacked**，选择 `builds/chrome-unpacked-current`。
 
 重新加载后跑验收命令：
 
