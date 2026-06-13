@@ -265,6 +265,7 @@ domain:iesdouyin.com => Clippings/抖音
 
 ```sh
 npm run build
+npm run verify:release-package
 ```
 
 构建完成后会生成三个目录：
@@ -272,6 +273,8 @@ npm run build
 - `dist/`：Chromium 版本
 - `dist_firefox/`：Firefox 版本
 - `dist_safari/`：Safari 版本
+
+发布前必须运行 `npm run verify:release-package`。它会按 `package.json` 当前版本检查 Chrome、Firefox、Safari 三个 zip，并对真实 zip 运行 popup bootstrap smoke，避免 release 包遗漏兜底脚本或脚本顺序错误。
 
 ### 本地安装扩展
 
@@ -308,6 +311,8 @@ npm run build
 ```sh
 npm test
 ```
+
+`npm test` 会运行单元测试、安装态诊断脚本自测和 release package gate 自测。
 
 开发时也可以使用 watch 模式：
 
