@@ -28,6 +28,7 @@ import type { VideoDownloadResponse } from '../utils/video-native-downloader';
 import { appendVideoDownloadLocation } from '../utils/video-download-note';
 import { resolveFolderPathForUrl } from '../utils/folder-routing';
 import { detectVideoPlatform } from '../utils/video-clipping';
+import { runOptionalStep } from '../utils/resilience';
 
 interface ReaderModeResponse {
 	success: boolean;
@@ -197,14 +198,9 @@ const debouncedSetPopupDimensions = debounce(setPopupDimensions, 100); // 100ms 
 
 async function initializeExtension(tabId: number) {
 	try {
-		// Initialize translations
-		await translatePage();
-		
-		// Setup language and RTL support
-		await setupLanguageAndDirection();
-		
-		// First, add the browser class to allow browser-specific styles to apply
-		await addBrowserClassToHtml();
+		await runOptionalStep('translate popup', translatePage);
+		await runOptionalStep('setup language direction', setupLanguageAndDirection);
+		await runOptionalStep('add browser class', addBrowserClassToHtml);
 		
 		// Set an initial large height to allow the browser to determine the maximum height
 		// This is necessary for browsers that allow scaling the popup via page zoom
@@ -217,22 +213,22 @@ async function initializeExtension(tabId: number) {
 
 		debugLog('Settings', 'General settings:', loadedSettings);
 
-		templates = await loadTemplates();
+		templates = await runOptionalStep('load templates', loadTemplates) || [createDefaultTemplate()];
 		debugLog('Templates', 'Loaded templates:', templates);
 
 		if (templates.length === 0) {
-			console.error('No templates loaded');
-			return false;
+			console.warn('No templates loaded; using default template');
+			templates = [createDefaultTemplate()];
 		}
 
 		// Initialize triggers to speed up template matching
-		initializeTriggers(templates);
+		await runOptionalStep('initialize template triggers', () => initializeTriggers(templates));
 
 		currentTemplate = templates[0];
 		debugLog('Templates', 'Current template set to:', currentTemplate);
 
 		// Load last selected vault
-		lastSelectedVault = await getLocalStorage('lastSelectedVault');
+		lastSelectedVault = await runOptionalStep('load last selected vault', () => getLocalStorage('lastSelectedVault')) || null;
 		if (!lastSelectedVault && loadedSettings.vaults.length > 0) {
 			lastSelectedVault = loadedSettings.vaults[0];
 		}
@@ -253,15 +249,14 @@ async function initializeExtension(tabId: number) {
 		}
 
 		// Setup message listeners
-		setupMessageListeners();
-		setupStorageListeners();
+		await runOptionalStep('setup popup message listeners', setupMessageListeners);
+		await runOptionalStep('setup popup storage listeners', setupStorageListeners);
 
-		await checkHighlighterModeState(tabId);
+		await runOptionalStep('check highlighter mode state', () => checkHighlighterModeState(tabId));
 
 		return true;
 	} catch (error) {
 		console.error('Error initializing extension:', error);
-		showError('failedToInitialize');
 		return false;
 	}
 }
@@ -323,7 +318,6 @@ function setupMessageListeners() {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-	loadedSettings = await loadSettings();
 	if (isIframe) {
 		document.documentElement.classList.add('is-embedded');
 	}
@@ -331,6 +325,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 	const isSidePanel = document.documentElement.classList.contains('is-side-panel');
 
 	try {
+		loadedSettings = await runOptionalStep('load settings', loadSettings) || generalSettings;
+
 		// Get the active tab via background script to handle Firefox compatibility
 		const response = await getActiveTab();
 		if (!response || response.error || !response.tabId) {
