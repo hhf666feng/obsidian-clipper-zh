@@ -25,4 +25,11 @@ describe('popup error contract', () => {
 		expect(source).not.toContain('if (!initialized) {\n\t\t\t\treturn;\n\t\t\t}');
 		expect(source).toContain("await recoverWithFallbackFields(currentTabId, tab, new Error('Failed to initialize extension.'), 'Failed to initialize popup.');");
 	});
+
+	test('keeps clip action setup failures as action errors', () => {
+		const source = readFileSync(join(process.cwd(), 'src/core/popup.ts'), 'utf8');
+
+		expect(source).not.toContain("showFatalError('Some required fields are missing. Please try reloading the extension.');");
+		expect(source).toContain("showActionError('failedToSaveFile');");
+	});
 });

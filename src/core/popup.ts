@@ -1449,7 +1449,7 @@ async function handleClipObsidian(): Promise<void> {
 	const interpretBtn = document.getElementById('interpret-btn') as HTMLButtonElement;
 
 	if (!vaultDropdown || !noteContentField) {
-		showFatalError('Some required fields are missing. Please try reloading the extension.');
+		showActionError('failedToSaveFile');
 		return;
 	}
 
