@@ -307,6 +307,15 @@
 	}
 }
 
+.has-inline-error {
+	.error-message {
+		height: auto;
+		padding: 8px var(--popup-padding);
+		color: var(--text-error);
+		border-bottom: 1px solid var(--background-modifier-border);
+	}
+}
+
 #template-select {
 	appearance: none;
 	border: none;

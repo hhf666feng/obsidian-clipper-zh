@@ -30,6 +30,7 @@ import { resolveFolderPathForUrl } from '../utils/folder-routing';
 import { detectVideoPlatform } from '../utils/video-clipping';
 import { chooseFallbackTemplate, runOptionalStep } from '../utils/resilience';
 import { renderMinimalFallbackFields } from '../utils/popup-fallback';
+import { clearPopupError, showPopupError } from '../utils/popup-error-state';
 
 interface ReaderModeResponse {
 	success: boolean;
@@ -644,28 +645,15 @@ async function initializeUI() {
 	}
 }
 
-function showError(messageKey: string): void {
-	const errorMessage = document.querySelector('.error-message') as HTMLElement;
-	const clipper = document.querySelector('.clipper') as HTMLElement;
+function showError(messageKey: string, options: { fatal?: boolean } = { fatal: true }): void {
+	showPopupError(document, getMessage(messageKey) || messageKey, options);
+}
 
-	if (errorMessage && clipper) {
-		errorMessage.textContent = getMessage(messageKey) || messageKey;
-		errorMessage.style.display = 'flex';
-		clipper.style.display = 'none';
-
-		document.body.classList.add('has-error');
-	}
+function showActionError(messageKey: string): void {
+	showError(messageKey, { fatal: false });
 }
 function clearError(): void {
-	const errorMessage = document.querySelector('.error-message') as HTMLElement;
-	const clipper = document.querySelector('.clipper') as HTMLElement;
-
-	if (errorMessage && clipper) {
-		errorMessage.style.display = 'none';
-		clipper.style.display = 'block';
-
-		document.body.classList.remove('has-error');
-	}
+	clearPopupError(document);
 }
 
 function logError(message: string, error?: any): void {
@@ -1284,7 +1272,7 @@ async function toggleHighlighterMode(tabId: number) {
 		}
 	} catch (error) {
 		console.error('Error toggling highlighter mode:', error);
-		showError('failedToToggleHighlighter');
+		showActionError('failedToToggleHighlighter');
 	}
 }
 
@@ -1322,7 +1310,7 @@ async function toggleReaderMode(tabId: number) {
 		}
 	} catch (error) {
 		console.error('Error toggling reader mode:', error);
-		showError('failedToToggleReaderMode');
+		showActionError('failedToToggleReaderMode');
 	}
 }
 
@@ -1358,7 +1346,7 @@ export async function copyToClipboard(content: string) {
 		}
 	} catch (error) {
 		console.error('Failed to copy to clipboard:', error);
-		showError('failedToCopyText');
+		showActionError('failedToCopyText');
 	}
 }
 
@@ -1383,7 +1371,7 @@ async function handleSaveToDownloads() {
 			fileName,
 			mimeType: 'text/markdown',
 			tabId: currentTabId,
-			onError: (error) => showError('failedToSaveFile')
+			onError: (error) => showActionError('failedToSaveFile')
 		});
 
 		const tabInfo = await getCurrentTabInfo();
@@ -1396,7 +1384,7 @@ async function handleSaveToDownloads() {
 		}
 	} catch (error) {
 		console.error('Failed to save file:', error);
-		showError('failedToSaveFile');
+		showActionError('failedToSaveFile');
 	}
 }
 
@@ -1484,7 +1472,7 @@ async function handleClipObsidian(): Promise<void> {
 		}
 	} catch (error) {
 		console.error('Error in handleClipObsidian:', error);
-		showError('failedToSaveFile');
+		showActionError('failedToSaveFile');
 		throw error;
 	}
 }
@@ -1493,7 +1481,7 @@ async function startVideoDownloadAfterClip(context: { vault?: string; path?: str
 	const response = await startNativeVideoDownload(currentVariables, generalSettings.videoClipping, context);
 	if (response && !response.ok) {
 		console.warn('Video auto download was not started:', response.error || 'unknown error');
-		showError('videoAutoDownloadFailed');
+		showActionError('videoAutoDownloadFailed');
 	}
 	return response;
 }
