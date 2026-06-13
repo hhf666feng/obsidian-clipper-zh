@@ -15,9 +15,15 @@ describe('popup-bootstrap fallback', () => {
 					listeners[type] = listener;
 				},
 				setTimeout: (callback: () => void) => callback(),
+				MutationObserver: class {
+					observe() {}
+				},
 			},
 			document,
 			browser,
+			MutationObserver: class {
+				observe() {}
+			},
 		});
 	}
 
@@ -94,6 +100,42 @@ describe('popup-bootstrap fallback', () => {
 			expect((document.getElementById('note-name-field') as HTMLTextAreaElement).value).toBe('Existing note');
 			expect((document.getElementById('note-content-field') as HTMLTextAreaElement).value).toBe('Existing content');
 			expect((document.getElementById('path-name-field') as HTMLInputElement).value).toBe('Existing/Path');
+		});
+	});
+
+	test('recovers a reload-only fatal state even when no script error is thrown', () => {
+		const { window, document } = parseHTML(`
+			<html>
+				<body class="has-error">
+					<p class="error-message" style="display: flex;">Please try reloading the page.</p>
+					<div class="clipper" style="display: none;">
+						<textarea id="note-name-field"></textarea>
+						<div class="metadata-properties"></div>
+						<textarea id="note-content-field"></textarea>
+						<input id="path-name-field">
+					</div>
+				</body>
+			</html>
+		`);
+		const listeners: Record<string, (event: any) => void> = {};
+		const browser = {
+			tabs: {
+				query: () => Promise.resolve([{
+					title: 'WeChat article',
+					url: 'https://mp.weixin.qq.com/s/7OAo2uHmkEpPntPVPPFJnA',
+				}]),
+			},
+		};
+
+		runBootstrap(document as unknown as Document, window as unknown as Window, browser, listeners);
+		listeners.DOMContentLoaded?.({});
+
+		return Promise.resolve().then(() => {
+			expect((document.querySelector('.clipper') as HTMLElement).style.display).toBe('block');
+			expect((document.querySelector('.error-message') as HTMLElement).style.display).toBe('none');
+			expect(document.body.dataset.fallbackRendered).toBe('bootstrap');
+			expect((document.getElementById('note-name-field') as HTMLTextAreaElement).value).toBe('WeChat article');
+			expect((document.getElementById('source') as HTMLInputElement).value).toBe('https://mp.weixin.qq.com/s/7OAo2uHmkEpPntPVPPFJnA');
 		});
 	});
 });

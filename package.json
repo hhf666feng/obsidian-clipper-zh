@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-clipper",
-	"version": "1.6.2-zh.27",
+	"version": "1.6.2-zh.28",
 	"description": "面向中文内容归档增强的 Obsidian 网页剪藏器。",
 	"bin": {
 		"obsidian-clipper": "./dist/cli.cjs"
@@ -26,6 +26,7 @@
 		"build:api": "node scripts/build-api.mjs",
 		"dev": "npm run dev:chrome",
 		"test": "vitest run",
+		"smoke:popup-bootstrap": "node scripts/smoke-popup-bootstrap.mjs",
 		"test:watch": "vitest",
 		"update-locales": "ts-node --project scripts/tsconfig.json scripts/update-locales.ts",
 		"check-strings": "ts-node --project scripts/tsconfig.json scripts/check-unused-strings.ts",

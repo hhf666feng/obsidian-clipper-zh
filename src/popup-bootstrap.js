@@ -1,5 +1,19 @@
 (function () {
 	var fallbackRendered = false;
+	var fallbackStateObserved = false;
+
+	function isClipperHidden() {
+		var clipper = document.querySelector('.clipper');
+		return !!(clipper && clipper.style.display === 'none');
+	}
+
+	function isFatalPopupState() {
+		return !!(document.body && document.body.classList.contains('has-error') && isClipperHidden());
+	}
+
+	function isClipTargetUrl(url) {
+		return !url || /^https?:\/\//i.test(url);
+	}
 
 	function setValue(id, value) {
 		var element = document.getElementById(id);
@@ -57,6 +71,11 @@
 	}
 
 	function renderFields(title, url, cause) {
+		if (!isClipTargetUrl(url)) {
+			fallbackRendered = false;
+			return;
+		}
+
 		setValue('note-name-field', title || 'Untitled');
 		setValue('note-content-field', '');
 		setValue('path-name-field', 'Clippings');
@@ -94,6 +113,37 @@
 		}, 0);
 	}
 
+	function recoverFatalPopupState() {
+		if (fallbackStateObserved || !isFatalPopupState()) return;
+		fallbackStateObserved = true;
+		window.setTimeout(function () {
+			if (isFatalPopupState()) {
+				renderBootstrapFallback('fatal popup state');
+			} else {
+				fallbackStateObserved = false;
+			}
+		}, 0);
+	}
+
+	function observeFatalPopupState() {
+		window.setTimeout(recoverFatalPopupState, 100);
+		window.setTimeout(recoverFatalPopupState, 1000);
+
+		if (!window.MutationObserver || !document.body) return;
+		var observer = new MutationObserver(recoverFatalPopupState);
+		observer.observe(document.body, {
+			attributes: true,
+			attributeFilter: ['class', 'style'],
+			childList: true,
+			subtree: true,
+		});
+	}
+
 	window.addEventListener('error', handleError);
 	window.addEventListener('unhandledrejection', handleError);
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', observeFatalPopupState, { once: true });
+	} else {
+		observeFatalPopupState();
+	}
 })();
