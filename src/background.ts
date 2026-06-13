@@ -742,7 +742,8 @@ browser.runtime.onMessage.addListener((request: unknown, sender: browser.Runtime
 					success: true,
 					tab: {
 						id: tab.id,
-						url: url
+						url: url,
+						title: tab.title || ''
 					}
 				});
 			}).catch((error) => {

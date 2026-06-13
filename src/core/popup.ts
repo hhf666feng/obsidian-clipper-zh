@@ -22,7 +22,7 @@ import { debounce } from '../utils/debounce';
 import { sanitizeFileName } from '../utils/string-utils';
 import { saveFile } from '../utils/file-utils';
 import { translatePage, getMessage, setupLanguageAndDirection } from '../utils/i18n';
-import { buildVariables, formatPropertyValue } from '../utils/shared';
+import { buildFallbackVariables, buildVariables, formatPropertyValue } from '../utils/shared';
 import { startNativeVideoDownload } from '../utils/video-native-downloader';
 import type { VideoDownloadResponse } from '../utils/video-native-downloader';
 import { appendVideoDownloadLocation } from '../utils/video-download-note';
@@ -77,21 +77,44 @@ function getPropertiesFromDOM(): Property[] {
 }
 
 // Helper function to get tab info from background script
-async function getTabInfo(tabId: number): Promise<{ id: number; url: string }> {
-	const response = await browser.runtime.sendMessage({ action: "getTabInfo", tabId }) as { success?: boolean; tab?: { id: number; url: string }; error?: string };
+async function getTabInfo(tabId: number): Promise<{ id: number; url: string; title?: string }> {
+	let response: { success?: boolean; tab?: { id: number; url: string; title?: string }; error?: string } | undefined;
+	try {
+		response = await browser.runtime.sendMessage({ action: "getTabInfo", tabId }) as { success?: boolean; tab?: { id: number; url: string; title?: string }; error?: string };
+	} catch (error) {
+		console.warn('Falling back to tabs.get for tab info:', error);
+	}
+
 	if (!response || !response.success || !response.tab) {
+		try {
+			const tab = await browser.tabs.get(tabId);
+			response = {
+				success: true,
+				tab: {
+					id: tab.id || tabId,
+					url: tab.url || '',
+					title: tab.title || '',
+				},
+			};
+		} catch (error) {
+			throw new Error((response && response.error) || (error instanceof Error ? error.message : 'Failed to get tab info'));
+		}
+	}
+
+	const resolvedTab = response.tab;
+	if (!resolvedTab) {
 		throw new Error((response && response.error) || 'Failed to get tab info');
 	}
 	// On the reader page, tabs.get() can't see the extension page URL
 	// without the tabs permission. Fall back to the readerUrl param
 	// passed through the iframe src.
-	if (!response.tab.url) {
+	if (!resolvedTab.url) {
 		const readerUrl = urlParams.get('readerUrl');
 		if (readerUrl) {
-			response.tab.url = readerUrl;
+			resolvedTab.url = readerUrl;
 		}
 	}
-	return response.tab;
+	return resolvedTab;
 }
 
 // Helper function to get current tab URL and title for stats
@@ -311,7 +334,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 		// Get the active tab via background script to handle Firefox compatibility
 		const response = await getActiveTab();
 		if (!response || response.error || !response.tabId) {
-			showError(getMessage('pleaseReload'));
+			showError(response?.error || 'No active tab found');
 			return;
 		}
 		
@@ -413,14 +436,16 @@ document.addEventListener('DOMContentLoaded', async function() {
 				await refreshFields(currentTabId);
 			} catch (error) {
 				console.error('Error initializing popup:', error);
-				showError(getMessage('pleaseReload'));
+				if (!(await fillFallbackFields(currentTabId, tab, error))) {
+					showError(error instanceof Error ? error.message : 'Failed to initialize popup.');
+				}
 			}
 		} else {
-			showError(getMessage('pleaseReload'));
+			showError('No active tab found');
 		}
 	} catch (error) {
 		console.error('Error getting active tab:', error);
-		showError(getMessage('pleaseReload'));
+		showError(error instanceof Error ? error.message : 'Failed to initialize popup.');
 	}
 });
 
@@ -777,8 +802,8 @@ async function refreshFields(tabId: number, { checkTemplateTriggers = true, rebu
 	} catch (error) {
 		console.error('Error refreshing fields:', error);
 		const tab = await getTabInfo(tabId).catch(() => null);
-		if (tab && await fillVideoFallbackFields(tabId, tab)) {
-			console.warn('Using video fallback fields after extraction failure:', error);
+		if (tab && await fillFallbackFields(tabId, tab, error)) {
+			console.warn('Using fallback fields after extraction failure:', error);
 			clearError();
 			return;
 		}
@@ -787,34 +812,28 @@ async function refreshFields(tabId: number, { checkTemplateTriggers = true, rebu
 	}
 }
 
-async function fillVideoFallbackFields(tabId: number, tab: { id: number; url: string }): Promise<boolean> {
-	if (!detectVideoPlatform(tab.url)) return false;
+async function fillFallbackFields(tabId: number, tab: { id: number; url: string; title?: string }, cause?: unknown): Promise<boolean> {
+	if (!tab.url || isBlankPage(tab.url) || !isValidUrl(tab.url) || isRestrictedUrl(tab.url)) {
+		return false;
+	}
 
-	const videoTemplate = templates.find(template => template.id === 'builtin-video-clip') || currentTemplate;
-	if (!videoTemplate) return false;
+	const fallbackTemplate = detectVideoPlatform(tab.url)
+		? templates.find(template => template.id === 'builtin-video-clip') || currentTemplate
+		: currentTemplate || templates[0];
+	if (!fallbackTemplate) return false;
 
-	currentTemplate = videoTemplate;
+	currentTemplate = fallbackTemplate;
 	updateTemplateDropdown();
 	buildTemplateFieldsSkeleton(currentTemplate);
 	setupMetadataToggle();
 
 	const title = await browser.tabs.get(tabId)
-		.then(activeTab => activeTab.title || 'Video')
-		.catch(() => 'Video');
-	const fallbackVariables = buildVariables({
+		.then(activeTab => activeTab.title || tab.title || '')
+		.catch(() => tab.title || '');
+	const fallbackVariables = buildFallbackVariables({
 		title,
-		author: '',
-		content: '',
-		contentHtml: '',
 		url: tab.url,
-		fullHtml: '',
-		description: '',
-		favicon: '',
-		image: '',
-		published: '',
-		site: '',
-		language: '',
-		wordCount: 0,
+		extractionError: cause instanceof Error ? cause.message : String(cause || ''),
 		videoClippingSettings: generalSettings.videoClipping,
 	});
 

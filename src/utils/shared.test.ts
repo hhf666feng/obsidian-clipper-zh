@@ -2,6 +2,7 @@ import { describe, test, expect } from 'vitest';
 import {
 	buildVariables,
 	BuildVariablesParams,
+	buildFallbackVariables,
 	generateFrontmatter,
 	extractContentBySelector,
 	addSchemaOrgDataToVariables,
@@ -243,6 +244,25 @@ describe('buildVariables', () => {
 			schemaOrgData: [{ '@type': 'Article', headline: 'Test' }],
 		}));
 		expect(vars['{{schema:@Article:headline}}']).toBe('Test');
+	});
+});
+
+describe('buildFallbackVariables', () => {
+	test('builds usable variables for ordinary article pages when extraction fails', () => {
+		const vars = buildFallbackVariables({
+			url: 'https://mp.weixin.qq.com/s/7OAo2uHmkEpPntPVPPFJnA',
+			title: '从超级个体到超级团队：AI时代组织变革的涌现报告',
+			extractionError: 'Content script did not respond after injection',
+		});
+
+		expect(vars['{{title}}']).toBe('从超级个体到超级团队：AI时代组织变革的涌现报告');
+		expect(vars['{{noteName}}']).toBe('从超级个体到超级团队：AI时代组织变革的涌现报告');
+		expect(vars['{{url}}']).toBe('https://mp.weixin.qq.com/s/7OAo2uHmkEpPntPVPPFJnA');
+		expect(vars['{{domain}}']).toBe('qq.com');
+		expect(vars['{{site}}']).toBe('mp.weixin.qq.com');
+		expect(vars['{{content}}']).toBe('');
+		expect(vars['{{extractionFallback}}']).toBe('true');
+		expect(vars['{{extractionError}}']).toContain('Content script did not respond');
 	});
 });
 

@@ -36,6 +36,14 @@ export interface BuildVariablesParams {
 	videoClippingSettings?: Partial<VideoClippingSettings>;
 }
 
+export interface BuildFallbackVariablesParams {
+	url: string;
+	title?: string;
+	site?: string;
+	extractionError?: string;
+	videoClippingSettings?: Partial<VideoClippingSettings>;
+}
+
 function normalizePrimaryImageUrl(image: string): string {
 	const trimmed = (image || '').trim();
 	if (!trimmed) return '';
@@ -128,6 +136,39 @@ export function buildVariables(params: BuildVariablesParams): Record<string, str
 	}
 
 	return variables;
+}
+
+export function buildFallbackVariables(params: BuildFallbackVariablesParams): Record<string, string> {
+	const domain = getDomain(params.url);
+	let hostname = domain;
+	try {
+		hostname = new URL(params.url).hostname || domain;
+	} catch {
+		hostname = domain;
+	}
+	const title = (params.title || domain || 'Untitled').trim();
+
+	return buildVariables({
+		title,
+		author: '',
+		content: '',
+		contentHtml: '',
+		url: params.url,
+		fullHtml: '',
+		rawHtml: '',
+		description: '',
+		favicon: '',
+		image: '',
+		published: '',
+		site: (params.site || hostname).trim(),
+		language: '',
+		wordCount: 0,
+		extractedContent: {
+			extractionFallback: 'true',
+			extractionError: params.extractionError || '',
+		},
+		videoClippingSettings: params.videoClippingSettings,
+	});
 }
 
 // ---------------------------------------------------------------------------
