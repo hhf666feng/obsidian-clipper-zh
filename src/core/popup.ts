@@ -29,6 +29,7 @@ import { appendVideoDownloadLocation } from '../utils/video-download-note';
 import { resolveFolderPathForUrl } from '../utils/folder-routing';
 import { detectVideoPlatform } from '../utils/video-clipping';
 import { chooseFallbackTemplate, runOptionalStep } from '../utils/resilience';
+import { renderMinimalFallbackFields } from '../utils/popup-fallback';
 
 interface ReaderModeResponse {
 	success: boolean;
@@ -813,31 +814,46 @@ async function fillFallbackFields(tabId: number, tab: { id: number; url: string;
 		return false;
 	}
 
-	const fallbackTemplate = chooseFallbackTemplate(
-		templates,
-		currentTemplate,
-		createDefaultTemplate(),
-		{ preferVideoTemplate: !!detectVideoPlatform(tab.url) },
-	);
+	try {
+		const fallbackTemplate = chooseFallbackTemplate(
+			templates,
+			currentTemplate,
+			createDefaultTemplate(),
+			{ preferVideoTemplate: !!detectVideoPlatform(tab.url) },
+		);
 
-	currentTemplate = fallbackTemplate;
-	updateTemplateDropdown();
-	buildTemplateFieldsSkeleton(currentTemplate);
-	setupMetadataToggle();
+		currentTemplate = fallbackTemplate;
+		updateTemplateDropdown();
+		buildTemplateFieldsSkeleton(currentTemplate);
+		setupMetadataToggle();
 
-	const title = await browser.tabs.get(tabId)
-		.then(activeTab => activeTab.title || tab.title || '')
-		.catch(() => tab.title || '');
-	const fallbackVariables = buildFallbackVariables({
-		title,
-		url: tab.url,
-		extractionError: cause instanceof Error ? cause.message : String(cause || ''),
-		videoClippingSettings: generalSettings.videoClipping,
-	});
+		const title = await browser.tabs.get(tabId)
+			.then(activeTab => activeTab.title || tab.title || '')
+			.catch(() => tab.title || '');
+		const fallbackVariables = buildFallbackVariables({
+			title,
+			url: tab.url,
+			extractionError: cause instanceof Error ? cause.message : String(cause || ''),
+			videoClippingSettings: generalSettings.videoClipping,
+		});
 
-	await fillTemplateFieldValues(tabId, currentTemplate, fallbackVariables, null, fallbackVariables['{{videoUrl}}'] || tab.url);
-	updateVariablesPanel(currentTemplate, currentVariables);
-	return true;
+		await fillTemplateFieldValues(tabId, currentTemplate, fallbackVariables, null, fallbackVariables['{{videoUrl}}'] || tab.url);
+		updateVariablesPanel(currentTemplate, currentVariables);
+		return true;
+	} catch (fallbackError) {
+		console.warn('Fallback template rendering failed; using minimal fields.', fallbackError);
+		const fallbackVariables = buildFallbackVariables({
+			title: tab.title || '',
+			url: tab.url,
+			extractionError: cause instanceof Error ? cause.message : String(cause || ''),
+			videoClippingSettings: generalSettings.videoClipping,
+		});
+		currentVariables = fallbackVariables;
+		return renderMinimalFallbackFields({
+			variables: fallbackVariables,
+			path: generalSettings.folderRouting?.defaultPath || 'Clippings',
+		});
+	}
 }
 
 function updateTemplateDropdown() {
