@@ -238,15 +238,15 @@ async function initializeExtension(tabId: number) {
 
 		const tab = await getTabInfo(tabId);
 		if (!tab.url || isBlankPage(tab.url)) {
-			showError('pageCannotBeClipped');
+			showFatalError('pageCannotBeClipped');
 			return;
 		}
 		if (!isValidUrl(tab.url)) {
-			showError('onlyHttpSupported');
+			showFatalError('onlyHttpSupported');
 			return;
 		}
 		if (isRestrictedUrl(tab.url)) {
-			showError('pageCannotBeClipped');
+			showFatalError('pageCannotBeClipped');
 			return;
 		}
 
@@ -300,15 +300,15 @@ function setupMessageListeners() {
 			if (!isIframe) {
 				currentTabId = request.tabId;
 				if (request.isRestrictedUrl) {
-					showError('pageCannotBeClipped');
+					showFatalError('pageCannotBeClipped');
 				} else if (request.isValidUrl) {
 					if (currentTabId !== undefined) {
 						refreshFields(currentTabId); // Force template check when URL changes
 					}
 				} else if (request.isBlankPage) {
-					showError('pageCannotBeClipped');
+					showFatalError('pageCannotBeClipped');
 				} else {
-					showError('onlyHttpSupported');
+					showFatalError('onlyHttpSupported');
 				}
 			}
 		} else if (request.action === "updatePopupHighlighterUI") {
@@ -332,7 +332,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 		// Get the active tab via background script to handle Firefox compatibility
 		const response = await getActiveTab();
 		if (!response || response.error || !response.tabId) {
-			showError(response?.error || 'No active tab found');
+			showFatalError(response?.error || 'No active tab found');
 			return;
 		}
 		
@@ -434,16 +434,20 @@ document.addEventListener('DOMContentLoaded', async function() {
 				await refreshFields(currentTabId);
 			} catch (error) {
 				console.error('Error initializing popup:', error);
-				if (!(await fillFallbackFields(currentTabId, tab, error))) {
-					showError(error instanceof Error ? error.message : 'Failed to initialize popup.');
-				}
+				await recoverWithFallbackFields(currentTabId, tab, error, 'Failed to initialize popup.');
 			}
 		} else {
-			showError('No active tab found');
+			showFatalError('No active tab found');
 		}
 	} catch (error) {
 		console.error('Error getting active tab:', error);
-		showError(error instanceof Error ? error.message : 'Failed to initialize popup.');
+		if (currentTabId) {
+			const tab = await getTabInfo(currentTabId).catch(() => null);
+			if (tab && await recoverWithFallbackFields(currentTabId, tab, error, 'Failed to initialize popup.')) {
+				return;
+			}
+		}
+		showFatalError('Failed to initialize popup.');
 	}
 });
 
@@ -645,12 +649,12 @@ async function initializeUI() {
 	}
 }
 
-function showError(messageKey: string, options: { fatal?: boolean } = { fatal: true }): void {
-	showPopupError(document, getMessage(messageKey) || messageKey, options);
+function showFatalError(messageKey: string): void {
+	showPopupError(document, getMessage(messageKey) || messageKey, { fatal: true });
 }
 
 function showActionError(messageKey: string): void {
-	showError(messageKey, { fatal: false });
+	showPopupError(document, getMessage(messageKey) || messageKey, { fatal: false });
 }
 function clearError(): void {
 	clearPopupError(document);
@@ -658,7 +662,23 @@ function clearError(): void {
 
 function logError(message: string, error?: any): void {
 	console.error(message, error);
-	showError(message);
+	showFatalError(message);
+}
+
+async function recoverWithFallbackFields(
+	tabId: number,
+	tab: { id: number; url: string; title?: string },
+	error: unknown,
+	fatalMessageKey: string,
+): Promise<boolean> {
+	if (await fillFallbackFields(tabId, tab, error)) {
+		console.warn('Using fallback fields after popup failure:', error);
+		clearError();
+		return true;
+	}
+
+	showFatalError(fatalMessageKey);
+	return false;
 }
 
 async function waitForInterpreter(interpretBtn: HTMLButtonElement): Promise<void> {
@@ -683,22 +703,22 @@ async function waitForInterpreter(interpretBtn: HTMLButtonElement): Promise<void
 async function refreshFields(tabId: number, { checkTemplateTriggers = true, rebuildSkeleton = true }: { checkTemplateTriggers?: boolean; rebuildSkeleton?: boolean } = {}) {
 	if (templates.length === 0) {
 		console.warn('No templates available');
-		showError('noTemplates');
+		showFatalError('noTemplates');
 		return;
 	}
 
 	try {
 		const tab = await getTabInfo(tabId);
 		if (!tab.url || isBlankPage(tab.url)) {
-			showError('pageCannotBeClipped');
+			showFatalError('pageCannotBeClipped');
 			return;
 		}
 		if (!isValidUrl(tab.url)) {
-			showError('onlyHttpSupported');
+			showFatalError('onlyHttpSupported');
 			return;
 		}
 		if (isRestrictedUrl(tab.url)) {
-			showError('pageCannotBeClipped');
+			showFatalError('pageCannotBeClipped');
 			return;
 		}
 
@@ -787,13 +807,9 @@ async function refreshFields(tabId: number, { checkTemplateTriggers = true, rebu
 	} catch (error) {
 		console.error('Error refreshing fields:', error);
 		const tab = await getTabInfo(tabId).catch(() => null);
-		if (tab && await fillFallbackFields(tabId, tab, error)) {
-			console.warn('Using fallback fields after extraction failure:', error);
-			clearError();
+		if (tab && await recoverWithFallbackFields(tabId, tab, error, 'pageCannotBeClipped')) {
 			return;
 		}
-		const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-		showError(errorMessage);
 	}
 }
 
@@ -1432,7 +1448,7 @@ async function handleClipObsidian(): Promise<void> {
 	const interpretBtn = document.getElementById('interpret-btn') as HTMLButtonElement;
 
 	if (!vaultDropdown || !noteContentField) {
-		showError('Some required fields are missing. Please try reloading the extension.');
+		showFatalError('Some required fields are missing. Please try reloading the extension.');
 		return;
 	}
 
