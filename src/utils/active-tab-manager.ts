@@ -2,6 +2,8 @@ import browser from './browser-polyfill';
 
 let currentActiveTabId: number | undefined;
 let currentWindowId: number | undefined;
+let lastNormalActiveTabId: number | undefined;
+let lastNormalWindowId: number | undefined;
 
 export interface ActiveTabResult {
 	tabId?: number;
@@ -13,6 +15,10 @@ export async function updateCurrentActiveTab(windowId: number) {
 	if (tabs[0] && tabs[0].id && tabs[0].url) {
 		currentActiveTabId = tabs[0].id;
 		currentWindowId = windowId;
+		if (isNormalPageUrl(tabs[0].url)) {
+			lastNormalActiveTabId = tabs[0].id;
+			lastNormalWindowId = windowId;
+		}
 		browser.runtime.sendMessage({
 			action: "activeTabChanged",
 			tabId: currentActiveTabId,
@@ -31,8 +37,15 @@ export async function queryActiveTab(): Promise<ActiveTabResult> {
 	// Fallback for extension pages and detached UI contexts where currentWindow
 	// can point at the popup/devtools window instead of the browser tab.
 	if (!currentTab?.id || isExtensionPageUrl(currentTab.url)) {
+		if (lastNormalActiveTabId) {
+			return { tabId: lastNormalActiveTabId };
+		}
 		const allActiveTabs = await browser.tabs.query({ active: true });
 		currentTab = allActiveTabs.find(tab =>
+			tab.id && tab.url && tab.windowId === lastNormalWindowId && isNormalPageUrl(tab.url)
+		) || allActiveTabs.find(tab =>
+			tab.id && tab.url && isNormalPageUrl(tab.url)
+		) || allActiveTabs.find(tab =>
 			tab.id && tab.url && !isExtensionPageUrl(tab.url)
 		) || allActiveTabs[0];
 	}
@@ -41,6 +54,13 @@ export async function queryActiveTab(): Promise<ActiveTabResult> {
 		return { tabId: currentTab.id };
 	}
 	return { error: 'No active tab found' };
+}
+
+export function resetActiveTabTrackingForTests() {
+	currentActiveTabId = undefined;
+	currentWindowId = undefined;
+	lastNormalActiveTabId = undefined;
+	lastNormalWindowId = undefined;
 }
 
 function isExtensionPageUrl(url: string | undefined): boolean {

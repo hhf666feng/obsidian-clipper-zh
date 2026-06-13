@@ -646,18 +646,17 @@ browser.runtime.onMessage.addListener((request: unknown, sender: browser.Runtime
 		}
 
 		if (typedRequest.action === "getActiveTabAndToggleIframe") {
-			browser.tabs.query({active: true, currentWindow: true}).then(async (tabs) => {
-				const currentTab = tabs[0];
-				if (currentTab && currentTab.id) {
+			queryActiveTab().then(async (activeTab) => {
+				if (activeTab.tabId) {
 					try {
-						await routeMessageToTab(currentTab.id, { action: "toggle-iframe" });
+						await routeMessageToTab(activeTab.tabId, { action: "toggle-iframe" });
 						sendResponse({success: true});
 					} catch (error) {
 						console.error('Error sending toggle-iframe message:', error);
 						sendResponse({success: false, error: error instanceof Error ? error.message : String(error)});
 					}
 				} else {
-					sendResponse({success: false, error: 'No active tab found'});
+					sendResponse({success: false, error: activeTab.error || 'No active tab found'});
 				}
 			});
 			return true;

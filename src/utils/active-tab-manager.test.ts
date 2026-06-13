@@ -1,9 +1,10 @@
 import { afterEach, describe, test, expect } from 'vitest';
 import { __resetTabsQueryMock, __setTabsQueryMock } from './__mocks__/webextension-polyfill';
-import { isValidUrl, isBlankPage, isRestrictedUrl, queryActiveTab } from './active-tab-manager';
+import { isValidUrl, isBlankPage, isRestrictedUrl, queryActiveTab, updateCurrentActiveTab, resetActiveTabTrackingForTests } from './active-tab-manager';
 
 afterEach(() => {
 	__resetTabsQueryMock();
+	resetActiveTabTrackingForTests();
 });
 
 describe('isValidUrl', () => {
@@ -119,6 +120,25 @@ describe('queryActiveTab', () => {
 		});
 
 		await expect(queryActiveTab()).resolves.toEqual({ tabId: 13 });
+	});
+
+	test('prefers the last tracked real page over an arbitrary active tab from another window', async () => {
+		__setTabsQueryMock(async (query: any) => {
+			if (query.windowId === 2) {
+				return [{ id: 88, windowId: 2, url: 'https://mp.weixin.qq.com/s/current-window' }];
+			}
+			if (query.currentWindow) {
+				return [{ id: 7, windowId: 2, url: 'chrome-extension://mock-id/popup.html' }];
+			}
+			return [
+				{ id: 12, windowId: 1, url: 'https://my.feishu.cn/docx/other-window' },
+				{ id: 88, windowId: 2, url: 'https://mp.weixin.qq.com/s/current-window' },
+			];
+		});
+
+		await updateCurrentActiveTab(2);
+
+		await expect(queryActiveTab()).resolves.toEqual({ tabId: 88 });
 	});
 
 	test('reports an error when no active tab can be found', async () => {
