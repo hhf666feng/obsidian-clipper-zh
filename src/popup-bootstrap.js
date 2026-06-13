@@ -37,7 +37,7 @@
 	}
 
 	function renderBootstrapFallback(cause) {
-		if (fallbackRendered || (document.body && document.body.dataset.fallbackRendered)) return;
+		if (fallbackRendered || (document.body && (document.body.dataset.popupReady || document.body.dataset.fallbackRendered))) return;
 		fallbackRendered = true;
 
 		var title = document.title || 'Untitled';

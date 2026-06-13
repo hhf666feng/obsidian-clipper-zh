@@ -481,6 +481,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 				// Initial content load
 				await refreshFields(currentTabId);
+				markPopupReady();
 			} catch (error) {
 				console.error('Error initializing popup:', error);
 				await recoverWithFallbackFields(currentTabId, tab, error, 'Failed to initialize popup.');
@@ -709,6 +710,12 @@ function clearError(): void {
 	clearPopupError(document);
 }
 
+function markPopupReady(): void {
+	if (document.body?.dataset) {
+		document.body.dataset.popupReady = 'true';
+	}
+}
+
 function logError(message: string, error?: any): void {
 	console.error(message, error);
 	showFatalError(message);
@@ -723,6 +730,7 @@ async function recoverWithFallbackFields(
 	if (await fillFallbackFields(tabId, tab, error)) {
 		console.warn('Using fallback fields after popup failure:', error);
 		clearError();
+		markPopupReady();
 		return true;
 	}
 
