@@ -214,6 +214,14 @@ npm run diagnose:installed
 
 如果输出里出现 `OUTDATED` 或 `MISSING_BOOTSTRAP`，说明浏览器仍在使用旧扩展目录。到 `chrome://extensions` 删除旧的 Obsidian Web Clipper，再从最新 release zip 解压目录重新 **Load unpacked**。
 
+重新加载后跑验收命令：
+
+```sh
+npm run verify:installed
+```
+
+这个命令只有在所有检测到的 Chrome 扩展包都是当前版本、并且弹窗包含 `popup-bootstrap.js` 时才会通过。
+
 ### 抖音仍保存到 `Clippings/Videos`
 
 升级到 `v1.6.2-zh.29` 后会补齐默认路由。也可以在设置页的“文件夹路由”中确认有这些规则：

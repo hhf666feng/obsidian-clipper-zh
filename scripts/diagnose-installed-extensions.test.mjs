@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -17,6 +17,12 @@ function writeText(filePath, value) {
 }
 
 try {
+	const packageJson = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+	assert.equal(
+		packageJson.scripts?.['verify:installed'],
+		'node scripts/diagnose-installed-extensions.mjs --strict',
+	);
+
 	const chromeRoot = path.join(tempDir, 'Google', 'Chrome');
 	const extensionDir = path.join(chromeRoot, 'Profile 1', 'Extensions', 'staleclipperid', '1.6.1_0');
 	const healthyExtensionDir = path.join(chromeRoot, 'Profile 2', 'Extensions', 'freshclipperid', '1.6.2_29');
