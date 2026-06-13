@@ -13,6 +13,8 @@ function readArg(name) {
 const chromeRoot = readArg('--chrome-root')
 	|| path.join(homedir(), 'Library', 'Application Support', 'Google', 'Chrome');
 const expectedVersionName = readArg('--expected-version-name') || readPackageVersion();
+const expectedUnpackedDir = readArg('--expected-unpacked-dir')
+	|| path.join(process.cwd(), 'builds', 'chrome-unpacked-current');
 
 function readPackageVersion() {
 	try {
@@ -84,6 +86,42 @@ function readPopupStatus(extensionVersionDir, manifest) {
 	};
 }
 
+function inspectExtensionDirectory(extensionDir) {
+	const manifest = readJson(path.join(extensionDir, 'manifest.json'));
+	if (!manifest) {
+		return {
+			path: extensionDir,
+			exists: existsSync(extensionDir),
+			versionName: '',
+			defaultPopup: '',
+			hasBootstrap: false,
+			status: existsSync(extensionDir) ? ['MISSING_MANIFEST'] : ['MISSING_DIRECTORY'],
+		};
+	}
+
+	const popupStatus = readPopupStatus(extensionDir, manifest);
+	const versionName = manifest.version_name || manifest.version || '';
+	const status = [];
+	if (expectedVersionName && compareVersions(versionName, expectedVersionName) < 0) {
+		status.push('OUTDATED');
+	}
+	if (!popupStatus.hasBootstrap) {
+		status.push('MISSING_BOOTSTRAP');
+	}
+	if (status.length === 0) {
+		status.push('OK');
+	}
+
+	return {
+		path: extensionDir,
+		exists: true,
+		versionName,
+		defaultPopup: popupStatus.defaultPopup,
+		hasBootstrap: popupStatus.hasBootstrap,
+		status,
+	};
+}
+
 function preferenceState(profileDir, extensionId) {
 	const preferences = readJson(path.join(profileDir, 'Preferences'));
 	const settings = preferences?.extensions?.settings?.[extensionId];
@@ -142,6 +180,7 @@ function printFindings(findings) {
 	if (expectedVersionName) {
 		console.log(`Expected version: ${expectedVersionName}`);
 	}
+	printExpectedUnpacked();
 
 	if (findings.length === 0) {
 		console.log('No installed Obsidian Web Clipper extension packages found.');
@@ -162,6 +201,17 @@ function printFindings(findings) {
 	}
 }
 
+function printExpectedUnpacked() {
+	const expected = inspectExtensionDirectory(expectedUnpackedDir);
+	console.log([
+		`Expected unpacked dir=${expected.path}`,
+		`version=${expected.versionName || 'unknown'}`,
+		`popup=${expected.defaultPopup || 'none'}`,
+		`bootstrap=${expected.hasBootstrap ? 'yes' : 'no'}`,
+		`status=${expected.status.join(',')}`,
+	].join(' '));
+}
+
 const findings = scanInstalledClippers(chromeRoot);
 printFindings(findings);
 
@@ -169,6 +219,8 @@ if (strict) {
 	const failingFindings = findings.filter(finding => !finding.status.includes('OK'));
 	if (failingFindings.length > 0) {
 		console.error(`Installed extension check failed: ${failingFindings.length} stale or unsafe package(s) found.`);
+		console.error(`Expected Chrome unpacked directory: ${expectedUnpackedDir}`);
+		console.error('Run `npm run prepare:chrome-unpacked`, then load that directory from chrome://extensions, then rerun `npm run verify:installed`.');
 		process.exit(1);
 	}
 }

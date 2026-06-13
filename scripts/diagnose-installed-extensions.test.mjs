@@ -26,6 +26,7 @@ try {
 	const chromeRoot = path.join(tempDir, 'Google', 'Chrome');
 	const extensionDir = path.join(chromeRoot, 'Profile 1', 'Extensions', 'staleclipperid', '1.6.1_0');
 	const healthyExtensionDir = path.join(chromeRoot, 'Profile 2', 'Extensions', 'freshclipperid', '1.6.2_29');
+	const expectedUnpackedDir = path.join(tempDir, 'builds', 'chrome-unpacked-current');
 	const diagnoseScript = path.join(process.cwd(), 'scripts', 'diagnose-installed-extensions.mjs');
 
 	writeJson(path.join(extensionDir, 'manifest.json'), {
@@ -69,6 +70,22 @@ try {
 		'<script type="module" src="popup.js"></script>',
 		'</body></html>',
 	].join(''));
+	writeJson(path.join(expectedUnpackedDir, 'manifest.json'), {
+		manifest_version: 3,
+		name: 'Obsidian Web Clipper',
+		version: '1.6.2.29',
+		version_name: '1.6.2-zh.29',
+		action: {
+			default_popup: 'popup.html',
+		},
+	});
+	writeText(path.join(expectedUnpackedDir, 'popup.html'), [
+		'<html><body>',
+		'<script src="popup-bootstrap.js"></script>',
+		'<script type="module" src="popup.js"></script>',
+		'</body></html>',
+	].join(''));
+	writeText(path.join(expectedUnpackedDir, 'popup-bootstrap.js'), '/* bootstrap */');
 
 	const output = execFileSync(process.execPath, [
 		diagnoseScript,
@@ -76,12 +93,15 @@ try {
 		chromeRoot,
 		'--expected-version-name',
 		'1.6.2-zh.29',
+		'--expected-unpacked-dir',
+		expectedUnpackedDir,
 	], {
 		cwd: process.cwd(),
 		encoding: 'utf8',
 	});
 
 	assert.match(output, /Profile 1/);
+	assert.match(output, new RegExp(`Expected unpacked dir=${escapeRegExp(expectedUnpackedDir)}`));
 	assert.match(output, /staleclipperid/);
 	assert.match(output, /1\.6\.1/);
 	assert.match(output, /OUTDATED/);
@@ -97,6 +117,8 @@ try {
 		chromeRoot,
 		'--expected-version-name',
 		'1.6.2-zh.29',
+		'--expected-unpacked-dir',
+		expectedUnpackedDir,
 		'--strict',
 	], {
 		cwd: process.cwd(),
@@ -104,6 +126,8 @@ try {
 	});
 	assert.notEqual(strictResult.status, 0);
 	assert.match(strictResult.stderr, /Installed extension check failed: 1 stale or unsafe package\(s\) found/);
+	assert.match(strictResult.stderr, new RegExp(`Expected Chrome unpacked directory: ${escapeRegExp(expectedUnpackedDir)}`));
+	assert.match(strictResult.stderr, /npm run prepare:chrome-unpacked/);
 
 	const healthyOnlyRoot = path.join(tempDir, 'Healthy Chrome');
 	const healthyOnlyExtensionDir = path.join(healthyOnlyRoot, 'Profile 1', 'Extensions', 'freshclipperid', '1.6.2_29');
@@ -128,6 +152,8 @@ try {
 		healthyOnlyRoot,
 		'--expected-version-name',
 		'1.6.2-zh.29',
+		'--expected-unpacked-dir',
+		expectedUnpackedDir,
 		'--strict',
 	], {
 		cwd: process.cwd(),
@@ -136,4 +162,8 @@ try {
 	assert.match(healthyStrictOutput, /OK/);
 } finally {
 	rmSync(tempDir, { recursive: true, force: true });
+}
+
+function escapeRegExp(value) {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
