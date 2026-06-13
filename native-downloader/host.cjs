@@ -579,6 +579,7 @@ function writeTranscriptMarkdown(job, runError = null) {
 async function runJob(jobPath) {
 	const job = JSON.parse(fs.readFileSync(jobPath, 'utf8'));
 	let runError = null;
+	let succeededWithoutSubtitles = false;
 	try {
 		await runCommand(job.executable, job.args, job.logPath);
 	} catch (error) {
@@ -589,7 +590,7 @@ async function runJob(jobPath) {
 			try {
 				await runCommand(job.executable, job.fallbackArgs, job.logPath);
 				runError = null;
-				appendLogLine(job.logPath, 'Video download succeeded without subtitles.');
+				succeededWithoutSubtitles = true;
 			} catch (fallbackError) {
 				runError = fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
 				appendLogLine(job.logPath, `Fallback video download failed: ${runError.message}`);
@@ -598,6 +599,9 @@ async function runJob(jobPath) {
 	} finally {
 		try {
 			writeTranscriptMarkdown(job, runError);
+			if (succeededWithoutSubtitles) {
+				appendLogLine(job.logPath, 'Video download succeeded without subtitles.');
+			}
 		} finally {
 			if (job.temporaryCookieFile) {
 				try {

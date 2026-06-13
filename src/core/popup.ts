@@ -43,10 +43,13 @@ let templates: Template[] = [];
 let currentVariables: { [key: string]: string } = {};
 let currentTabId: number | undefined;
 let lastSelectedVault: string | null = null;
+let bootstrapRecoveryAttempted = false;
 
 const isSidePanel = window.location.pathname.includes('side-panel.html');
 const urlParams = new URLSearchParams(window.location.search);
 const isIframe = urlParams.get('context') === 'iframe';
+
+installBootstrapErrorRecovery();
 
 // Memoize compileTemplate with a short expiration and URL-sensitive key
 const memoizedCompileTemplate = memoizeWithExpiration(
@@ -316,6 +319,51 @@ function setupMessageListeners() {
 		} else if (request.action === "highlighterModeChanged") {
 			// This message is now handled by checkHighlighterModeState
 		}
+	});
+}
+
+function installBootstrapErrorRecovery(): void {
+	window.addEventListener('error', handleBootstrapError);
+	window.addEventListener('unhandledrejection', handleBootstrapError);
+}
+
+function handleBootstrapError(event: ErrorEvent | PromiseRejectionEvent): void {
+	recoverBootstrapError(event);
+}
+
+async function recoverBootstrapError(event: ErrorEvent | PromiseRejectionEvent): Promise<void> {
+	if (bootstrapRecoveryAttempted || document.body?.dataset.fallbackRendered) return;
+
+	bootstrapRecoveryAttempted = true;
+	const cause = event instanceof ErrorEvent ? event.error || event.message : event.reason;
+	console.error('Popup bootstrap error recovery activated:', cause);
+
+	loadedSettings = loadedSettings || generalSettings;
+
+	if (currentTabId) {
+		const tab = await getTabInfo(currentTabId).catch(() => null);
+		if (tab && await recoverWithFallbackFields(currentTabId, tab, cause, 'Failed to initialize popup.')) {
+			return;
+		}
+	}
+
+	const response = await getActiveTab().catch(() => null);
+	if (response?.tabId) {
+		currentTabId = response.tabId;
+		const tab = await getTabInfo(response.tabId).catch(() => null);
+		if (tab && await recoverWithFallbackFields(response.tabId, tab, cause, 'Failed to initialize popup.')) {
+			return;
+		}
+	}
+
+	renderMinimalFallbackFields({
+		variables: buildFallbackVariables({
+			title: document.title || 'Untitled',
+			url: '',
+			extractionError: cause instanceof Error ? cause.message : String(cause || ''),
+			videoClippingSettings: generalSettings.videoClipping,
+		}),
+		path: generalSettings.folderRouting?.defaultPath || 'Clippings',
 	});
 }
 

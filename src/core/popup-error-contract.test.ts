@@ -38,4 +38,13 @@ describe('popup error contract', () => {
 
 		expect(source).toContain("markPopupFallbackRendered(document, 'template');");
 	});
+
+	test('installs a bootstrap error recovery handler before initialization starts', () => {
+		const source = readFileSync(join(process.cwd(), 'src/core/popup.ts'), 'utf8');
+
+		expect(source).toContain('installBootstrapErrorRecovery();');
+		expect(source).toContain('window.addEventListener(\'error\', handleBootstrapError);');
+		expect(source).toContain('window.addEventListener(\'unhandledrejection\', handleBootstrapError);');
+		expect(source).toContain('recoverBootstrapError(event);');
+	});
 });
