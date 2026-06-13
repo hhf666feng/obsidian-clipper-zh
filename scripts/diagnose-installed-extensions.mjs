@@ -3,6 +3,7 @@ import path from 'node:path';
 import { homedir } from 'node:os';
 
 const args = process.argv.slice(2);
+const strict = args.includes('--strict');
 
 function readArg(name) {
 	const index = args.indexOf(name);
@@ -161,4 +162,13 @@ function printFindings(findings) {
 	}
 }
 
-printFindings(scanInstalledClippers(chromeRoot));
+const findings = scanInstalledClippers(chromeRoot);
+printFindings(findings);
+
+if (strict) {
+	const failingFindings = findings.filter(finding => !finding.status.includes('OK'));
+	if (failingFindings.length > 0) {
+		console.error(`Installed extension check failed: ${failingFindings.length} stale or unsafe package(s) found.`);
+		process.exit(1);
+	}
+}

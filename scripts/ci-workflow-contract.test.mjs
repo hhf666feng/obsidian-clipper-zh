@@ -6,13 +6,15 @@ const workflowPath = path.join(process.cwd(), '.github', 'workflows', 'ci.yml');
 const workflow = readFileSync(workflowPath, 'utf8');
 
 for (const expected of [
-	'actions/checkout@v4',
-	'actions/setup-node@v4',
+	'actions/checkout@v5',
+	'actions/setup-node@v6',
+	'actions/upload-artifact@v6',
 	'cache: npm',
 	'npm ci',
 	'npm test',
 	'npm run build',
 	'npm run verify:release-package',
+	'if-no-files-found: error',
 ]) {
 	assert.match(workflow, new RegExp(escapeRegExp(expected)), `missing CI step: ${expected}`);
 }
