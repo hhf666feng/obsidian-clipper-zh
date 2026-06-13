@@ -82,34 +82,70 @@ async function sendExtractRequest(tabId: number): Promise<ContentResponse> {
 
 	if (response && typeof response === 'object' && 'content' in response) {
 		// Ensure highlights are of the correct type
-		if (response.highlights && Array.isArray(response.highlights)) {
-			response.highlights = response.highlights.map((highlight: string | AnyHighlightData) => {
-				if (typeof highlight === 'string') {
-					return {
-						type: 'text',
-						id: Date.now().toString(),
-						xpath: '',
-						content: `<div>` + highlight + `</div>`,
-						startOffset: 0,
-						endOffset: highlight.length
-					};
-				}
-				return highlight as AnyHighlightData;
-			});
-		} else {
-			response.highlights = [];
-		}
-		return response;
+		return normalizeContentResponse(response);
 	}
 
 	throw new Error('No content received from page');
+}
+
+function normalizeHighlights(highlights: unknown): AnyHighlightData[] {
+	if (!Array.isArray(highlights)) return [];
+	return highlights.map((highlight: string | AnyHighlightData) => {
+		if (typeof highlight === 'string') {
+			return {
+				type: 'text',
+				id: Date.now().toString(),
+				xpath: '',
+				content: `<div>` + highlight + `</div>`,
+				startOffset: 0,
+				endOffset: highlight.length
+			};
+		}
+		return highlight as AnyHighlightData;
+	});
+}
+
+function normalizeExtractedContent(extractedContent: unknown): ExtractedContent {
+	if (!extractedContent || typeof extractedContent !== 'object' || Array.isArray(extractedContent)) {
+		return {};
+	}
+	return Object.fromEntries(
+		Object.entries(extractedContent).map(([key, value]) => [key, value == null ? '' : String(value)])
+	);
+}
+
+function normalizeContentResponse(response: Partial<ContentResponse>): ContentResponse {
+	const url = response.url || '';
+	const domain = response.domain || getDomain(url);
+	return {
+		url,
+		content: response.content || '',
+		selectedHtml: response.selectedHtml || '',
+		extractedContent: normalizeExtractedContent(response.extractedContent),
+		schemaOrgData: response.schemaOrgData ?? null,
+		fullHtml: response.fullHtml || '',
+		rawHtml: response.rawHtml || '',
+		highlights: normalizeHighlights(response.highlights),
+		title: response.title || domain || 'Untitled',
+		author: response.author || '',
+		description: response.description || '',
+		domain,
+		favicon: response.favicon || '',
+		image: response.image || '',
+		parseTime: response.parseTime || 0,
+		published: response.published || '',
+		site: response.site || domain,
+		wordCount: response.wordCount || 0,
+		language: response.language || '',
+		metaTags: Array.isArray(response.metaTags) ? response.metaTags : [],
+	};
 }
 
 function fallbackContentFromTab(tab: { url?: string; title?: string }, error: unknown): ContentResponse {
 	const url = tab.url || '';
 	const title = tab.title || getDomain(url) || 'Untitled';
 	const errorMessage = error instanceof Error ? error.message : String(error);
-	return {
+	return normalizeContentResponse({
 		url,
 		content: '',
 		selectedHtml: '',
@@ -133,7 +169,11 @@ function fallbackContentFromTab(tab: { url?: string; title?: string }, error: un
 		wordCount: 0,
 		language: '',
 		metaTags: [],
-	};
+	});
+}
+
+function stringifyError(error: unknown): string {
+	return error instanceof Error ? error.message : String(error || 'Unknown error');
 }
 
 export async function extractPageContent(tabId: number): Promise<ContentResponse | null> {
@@ -181,7 +221,7 @@ export async function initializePageContent(
 	metaTags: { name?: string | null; property?: string | null; itemprop?: string | null; content: string | null }[]
 ) {
 	try {
-		currentUrl = currentUrl.replace(/#:~:text=[^&]+(&|$)/, '');
+		currentUrl = (currentUrl || '').replace(/#:~:text=[^&]+(&|$)/, '');
 
 		let selectedMarkdown = '';
 		if (selectedHtml) {
@@ -234,11 +274,41 @@ export async function initializePageContent(
 		};
 	} catch (error: unknown) {
 		console.error('Error in initializePageContent:', error);
-		if (error instanceof Error) {
-			throw new Error(`Unable to initialize page content: ${error.message}`);
-		} else {
-			throw new Error('Unable to initialize page content: Unknown error');
-		}
+		const safeUrl = currentUrl || '';
+		const safeTitle = title || getDomain(safeUrl) || 'Untitled';
+		const fallbackContent: ExtractedContent = {
+			...normalizeExtractedContent(extractedContent),
+			extractionFallback: 'true',
+			extractionError: stringifyError(error),
+		};
+		const currentVariables = buildVariables({
+			title: safeTitle,
+			author: author || '',
+			content: '',
+			contentHtml: content || '',
+			url: safeUrl,
+			fullHtml: fullHtml || '',
+			rawHtml: rawHtml || '',
+			description: description || '',
+			favicon: favicon || '',
+			image: image || '',
+			published: published || '',
+			site: site || getDomain(safeUrl),
+			language: language || '',
+			wordCount: wordCount || 0,
+			selection: '',
+			selectionHtml: selectedHtml || '',
+			highlights: '',
+			schemaOrgData,
+			metaTags: Array.isArray(metaTags) ? metaTags : [],
+			extractedContent: fallbackContent,
+			videoClippingSettings: generalSettings.videoClipping,
+		});
+
+		return {
+			noteName: sanitizeFileName(safeTitle),
+			currentVariables,
+		};
 	}
 }
 
