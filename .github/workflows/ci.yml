@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "codex/**"
+  pull_request:
+
+jobs:
+  test-build-release-gate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build extension zips
+        run: npm run build
+
+      - name: Verify release package
+        run: npm run verify:release-package
+
+      - name: Upload release zips
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-zips
+          path: builds/*.zip
+          if-no-files-found: error
