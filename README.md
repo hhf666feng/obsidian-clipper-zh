@@ -26,10 +26,11 @@
 
 ### Chrome、Brave、Edge、Arc
 
-1. 下载 `obsidian-web-clipper-1.6.2-zh.29-chrome.zip` 并解压。
-2. 打开 `chrome://extensions`。
-3. 开启 **Developer mode**。
-4. 点击 **Load unpacked**，选择解压后的目录。
+1. 下载 `obsidian-web-clipper-1.6.2-zh.29-chrome.zip`，放到仓库的 `builds/` 目录。
+2. 在仓库里运行 `npm run prepare:chrome-unpacked`，生成固定目录 `builds/chrome-unpacked-current`。
+3. 打开 `chrome://extensions`。
+4. 开启 **Developer mode**。
+5. 点击 **Load unpacked**，选择 `builds/chrome-unpacked-current`。
 
 ### Firefox
 
@@ -212,7 +213,13 @@ ls -lt ~/.obsidian-clipper-zh/logs | head
 npm run diagnose:installed
 ```
 
-如果输出里出现 `OUTDATED` 或 `MISSING_BOOTSTRAP`，说明浏览器仍在使用旧扩展目录。到 `chrome://extensions` 删除旧的 Obsidian Web Clipper，再从最新 release zip 解压目录重新 **Load unpacked**。
+如果输出里出现 `OUTDATED` 或 `MISSING_BOOTSTRAP`，说明浏览器仍在使用旧扩展目录。先把最新 Chrome release zip 放到 `builds/`，运行：
+
+```sh
+npm run prepare:chrome-unpacked
+```
+
+然后到 `chrome://extensions` 删除旧的 Obsidian Web Clipper，重新 **Load unpacked**，选择 `builds/chrome-unpacked-current`。
 
 重新加载后跑验收命令：
 
