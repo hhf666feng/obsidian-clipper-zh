@@ -246,7 +246,10 @@ function normalizeDate(value: any): string {
 	if (!Number.isNaN(numeric)) {
 		return normalizeDate(numeric);
 	}
-	const parsed = dayjs(String(value));
+	const text = String(value).trim();
+	const hasExplicitTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(text);
+	const dateText = /^\d{4}-\d{2}-\d{2}$/.test(text) ? `${text}T00:00:00` : text;
+	const parsed = dayjs(hasExplicitTimezone ? dateText : `${dateText}+08:00`);
 	return parsed.isValid() ? parsed.toISOString() : String(value);
 }
 

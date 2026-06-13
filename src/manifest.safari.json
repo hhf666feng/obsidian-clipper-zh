@@ -2,8 +2,8 @@
 	"manifest_version": 3,
 	"name": "Obsidian Web Clipper",
 	"homepage_url": "https://obsidian.md/",
-	"version": "1.6.2.28",
-	"version_name": "1.6.2-zh.28",
+	"version": "1.6.2.29",
+	"version_name": "1.6.2-zh.29",
 	"description": "保存和高亮网页内容，修复微信公众号图片保存，并支持 B 站、抖音、YouTube 视频一键剪切。内容以 Markdown 存入 Obsidian，便于离线阅读和长期归档。",
 	"permissions": [
 		"activeTab",
