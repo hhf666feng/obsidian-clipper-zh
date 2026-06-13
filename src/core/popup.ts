@@ -28,7 +28,7 @@ import type { VideoDownloadResponse } from '../utils/video-native-downloader';
 import { appendVideoDownloadLocation } from '../utils/video-download-note';
 import { resolveFolderPathForUrl } from '../utils/folder-routing';
 import { detectVideoPlatform } from '../utils/video-clipping';
-import { runOptionalStep } from '../utils/resilience';
+import { chooseFallbackTemplate, runOptionalStep } from '../utils/resilience';
 
 interface ReaderModeResponse {
 	success: boolean;
@@ -813,10 +813,12 @@ async function fillFallbackFields(tabId: number, tab: { id: number; url: string;
 		return false;
 	}
 
-	const fallbackTemplate = detectVideoPlatform(tab.url)
-		? templates.find(template => template.id === 'builtin-video-clip') || currentTemplate
-		: currentTemplate || templates[0];
-	if (!fallbackTemplate) return false;
+	const fallbackTemplate = chooseFallbackTemplate(
+		templates,
+		currentTemplate,
+		createDefaultTemplate(),
+		{ preferVideoTemplate: !!detectVideoPlatform(tab.url) },
+	);
 
 	currentTemplate = fallbackTemplate;
 	updateTemplateDropdown();
@@ -982,15 +984,27 @@ async function fillTemplateFieldValues(currentTabId: number, template: Template 
 
 	if (!Array.isArray(template.properties)) return;
 
-	// Compile all templates in parallel
+	const safeCompile = async (label: string, templateText: unknown, fallbackValue = ''): Promise<string> => {
+		if (typeof templateText !== 'string') {
+			console.warn(`Skipping non-string template field: ${label}`);
+			return fallbackValue;
+		}
+		try {
+			return await memoizedCompileTemplate(currentTabId!, templateText, variables, currentUrl);
+		} catch (error) {
+			console.warn(`Failed to compile template field: ${label}`, error);
+			return fallbackValue;
+		}
+	};
+
 	const [compiledPropertyValues, formattedNoteName, formattedPath, formattedContent] = await Promise.all([
 		Promise.all(template.properties.map(property =>
-			memoizedCompileTemplate(currentTabId!, unescapeValue(property.value), variables, currentUrl)
+			safeCompile(`property:${property.name}`, unescapeValue(typeof property.value === 'string' ? property.value : ''), '')
 		)),
-		memoizedCompileTemplate(currentTabId!, template.noteNameFormat, variables, currentUrl),
-		memoizedCompileTemplate(currentTabId!, template.path, variables, currentUrl),
+		safeCompile('noteNameFormat', template.noteNameFormat, variables['{{title}}'] || 'Untitled'),
+		safeCompile('path', template.path, 'Clippings'),
 		template.noteContentFormat
-			? memoizedCompileTemplate(currentTabId!, template.noteContentFormat, variables, currentUrl)
+			? safeCompile('noteContentFormat', template.noteContentFormat, variables['{{content}}'] || '')
 			: Promise.resolve('')
 	]);
 
@@ -1059,8 +1073,10 @@ async function fillTemplateFieldValues(currentTabId: number, template: Template 
 		}
 	}
 
-	const replacedTemplate = await getReplacedTemplate(template, variables, currentTabId!, currentUrl);
-	debugLog('Variables', 'Current template with replaced variables:', JSON.stringify(replacedTemplate, null, 2));
+	await runOptionalStep('log replaced template variables', async () => {
+		const replacedTemplate = await getReplacedTemplate(template, variables, currentTabId!, currentUrl);
+		debugLog('Variables', 'Current template with replaced variables:', JSON.stringify(replacedTemplate, null, 2));
+	});
 }
 
 function setupMetadataToggle() {
