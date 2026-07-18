@@ -229,6 +229,7 @@ export function initializeGeneralSettings(): void {
 		initializeExportHighlightsButton();
 		initializeSaveBehaviorDropdown();
 		initializeVideoClippingSettings();
+		initializeFeishuClippingSettings();
 		initializeFolderRoutingSettings();
 		await initializeUsageChart();
 
@@ -260,6 +261,7 @@ function saveSettingsFromForm(): void {
 	const alwaysShowHighlightsToggle = document.getElementById('highlighter-visibility') as HTMLInputElement;
 	const highlightBehaviorSelect = document.getElementById('highlighter-behavior') as HTMLSelectElement;
 	const videoTemplateToggle = document.getElementById('video-template-toggle') as HTMLInputElement;
+	const feishuTemplateToggle = document.getElementById('feishu-template-toggle') as HTMLInputElement;
 	const videoTranscriptToggle = document.getElementById('video-transcript-toggle') as HTMLInputElement;
 	const videoSummaryToggle = document.getElementById('video-summary-toggle') as HTMLInputElement;
 	const videoDownloadCommandToggle = document.getElementById('video-download-command-toggle') as HTMLInputElement;
@@ -296,6 +298,9 @@ function saveSettingsFromForm(): void {
 			cookieBrowser: videoCookieBrowser?.value ?? generalSettings.videoClipping.cookieBrowser,
 			cookieProfile: videoCookieProfile?.value ?? generalSettings.videoClipping.cookieProfile,
 			cookieFile: videoCookieFile?.value ?? generalSettings.videoClipping.cookieFile,
+		},
+		feishuClipping: {
+			enableFeishuTemplate: feishuTemplateToggle?.checked ?? generalSettings.feishuClipping.enableFeishuTemplate,
 		},
 		folderRouting,
 	};
@@ -487,6 +492,21 @@ function saveVideoClippingSettings(settings: Partial<Settings['videoClipping']>,
 	});
 }
 
+function saveFeishuClippingSettings(settings: Partial<Settings['feishuClipping']>, refreshTemplates = false): void {
+	const nextFeishuClipping = {
+		...generalSettings.feishuClipping,
+		...settings,
+	};
+
+	saveSettings({ ...generalSettings, feishuClipping: nextFeishuClipping }).then(async () => {
+		if (!refreshTemplates) return;
+		const loadedTemplates = await loadTemplates();
+		updateTemplateList(loadedTemplates);
+	}).catch(error => {
+		console.error('Failed to save feishu clipping settings:', error);
+	});
+}
+
 function initializeVideoClippingSettings(): void {
 	initializeSettingToggle('video-template-toggle', generalSettings.videoClipping.enableVideoTemplate, (checked) => {
 		saveVideoClippingSettings({ enableVideoTemplate: checked }, true);
@@ -563,6 +583,12 @@ function initializeVideoClippingSettings(): void {
 			saveVideoClippingSettings({ cookieFile: cookieFileInput.value });
 		}, 500));
 	}
+}
+
+function initializeFeishuClippingSettings(): void {
+	initializeSettingToggle('feishu-template-toggle', generalSettings.feishuClipping.enableFeishuTemplate, (checked) => {
+		saveFeishuClippingSettings({ enableFeishuTemplate: checked }, true);
+	});
 }
 
 function initializeFolderRoutingSettings(): void {

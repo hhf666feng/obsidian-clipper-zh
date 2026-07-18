@@ -1159,6 +1159,12 @@
 	"videoTemplateDescription": {
 		"message": "Automatically select the built-in video clipping template for Bilibili, Douyin, and YouTube pages."
 	},
+	"feishuTemplate": {
+		"message": "Use Feishu/Lark doc template automatically"
+	},
+	"feishuTemplateDescription": {
+		"message": "Automatically select the built-in Feishu/Lark document template and preserve tables, code blocks, and heading levels (instead of generic web extraction)."
+	},
 	"videoTranscript": {
 		"message": "Include captions / transcript"
 	},

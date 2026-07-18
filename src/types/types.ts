@@ -85,6 +85,10 @@ export interface VideoClippingSettings {
 	cookieFile: string;
 }
 
+export interface FeishuClippingSettings {
+	enableFeishuTemplate: boolean;
+}
+
 export interface SiteFolderRule {
 	patternType: 'domain' | 'regex';
 	pattern: string;
@@ -124,6 +128,7 @@ export interface Settings {
 	ratings: Rating[];
 	saveBehavior: 'addToObsidian' | 'saveFile' | 'copyToClipboard';
 	videoClipping: VideoClippingSettings;
+	feishuClipping: FeishuClippingSettings;
 	folderRouting: FolderRoutingSettings;
 }
 

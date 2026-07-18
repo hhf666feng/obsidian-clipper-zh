@@ -28,6 +28,7 @@ import type { VideoDownloadResponse } from '../utils/video-native-downloader';
 import { appendVideoDownloadLocation } from '../utils/video-download-note';
 import { resolveFolderPathForUrl } from '../utils/folder-routing';
 import { detectVideoPlatform } from '../utils/video-clipping';
+import { detectFeishuDoc } from '../utils/feishu-clipping';
 import { chooseFallbackTemplate, runOptionalStep } from '../utils/resilience';
 import { markPopupFallbackRendered, renderMinimalFallbackFields } from '../utils/popup-fallback';
 import { clearPopupError, showPopupError } from '../utils/popup-error-state';
@@ -880,7 +881,7 @@ async function fillFallbackFields(tabId: number, tab: { id: number; url: string;
 			templates,
 			currentTemplate,
 			createDefaultTemplate(),
-			{ preferVideoTemplate: !!detectVideoPlatform(tab.url) },
+			{ preferVideoTemplate: !!detectVideoPlatform(tab.url), preferFeishuTemplate: !!detectFeishuDoc(tab.url) },
 		);
 
 		currentTemplate = fallbackTemplate;
