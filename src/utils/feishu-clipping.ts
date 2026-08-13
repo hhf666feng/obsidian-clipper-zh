@@ -114,31 +114,24 @@ function findFeishuDocRoot(document: Document): Element | null {
 	return null;
 }
 
+function inlineNodeText(node: Node): string {
+	if (node.nodeType === 3) return node.textContent || '';
+	if (node.nodeType !== 1) return '';
+
+	const element = node as Element;
+	const tag = element.tagName.toLowerCase();
+	if (tag === 'a') {
+		return `[${element.textContent || ''}](${element.getAttribute('href') || ''})`;
+	}
+	if (tag === 'br') return '\n';
+	if (tag === 'code') return '`' + (element.textContent || '') + '`';
+	if (tag === 'strong' || tag === 'b') return '**' + (element.textContent || '') + '**';
+	if (tag === 'em' || tag === 'i') return '_' + (element.textContent || '') + '_';
+	return Array.from(element.childNodes).map(inlineNodeText).join('');
+}
+
 function inlineText(el: Element): string {
-	let out = '';
-	el.childNodes.forEach((node) => {
-		if (node.nodeType === 3) {
-			out += node.textContent || '';
-		} else if (node.nodeType === 1) {
-			const child = node as Element;
-			const tag = child.tagName.toLowerCase();
-			if (tag === 'a') {
-				const href = child.getAttribute('href') || '';
-				out += `[${child.textContent || ''}](${href})`;
-			} else if (tag === 'br') {
-				out += '\n';
-			} else if (tag === 'code') {
-				out += '`' + (child.textContent || '') + '`';
-			} else if (tag === 'strong' || tag === 'b') {
-				out += '**' + (child.textContent || '') + '**';
-			} else if (tag === 'em' || tag === 'i') {
-				out += '_' + (child.textContent || '') + '_';
-			} else {
-				out += inlineText(child);
-			}
-		}
-	});
-	return out.replace(/\s+/g, ' ').trim();
+	return Array.from(el.childNodes).map(inlineNodeText).join('').replace(/\s+/g, ' ').trim();
 }
 
 function tableToMarkdown(table: Element): string[] {
@@ -165,9 +158,31 @@ function pushIfText(lines: string[], text: string): void {
 	}
 }
 
+const BLOCK_SELECTOR = 'h1,h2,h3,h4,h5,h6,ul,ol,table,blockquote,hr,img,pre,div,p,section';
+
 function walkBlocks(parent: Element, lines: string[]): void {
-	for (const child of Array.from(parent.children)) {
+	let inlineBuffer = '';
+	const flushInlineBuffer = () => {
+		pushIfText(lines, inlineBuffer);
+		inlineBuffer = '';
+	};
+
+	for (const node of Array.from(parent.childNodes)) {
+		if (node.nodeType === 3) {
+			inlineBuffer += node.textContent || '';
+			continue;
+		}
+		if (node.nodeType !== 1) continue;
+
+		const child = node as Element;
 		const tag = child.tagName.toLowerCase();
+		const isBlock = /^(?:h[1-6]|ul|ol|table|blockquote|hr|img|pre|div|p|section)$/.test(tag)
+			|| !!child.querySelector(BLOCK_SELECTOR);
+		if (!isBlock) {
+			inlineBuffer += inlineNodeText(child);
+			continue;
+		}
+		flushInlineBuffer();
 
 		if (/^h[1-6]$/.test(tag)) {
 			const level = parseInt(tag[1], 10);
@@ -207,18 +222,8 @@ function walkBlocks(parent: Element, lines: string[]): void {
 			lines.push('```');
 			lines.push('');
 		} else if (tag === 'div' || tag === 'p' || tag === 'section') {
-			// 含子块则递归，否则当段落
-			if (child.querySelector('h1,h2,h3,h4,h5,h6,ul,ol,table,pre,blockquote')) {
+			if (child.querySelector(BLOCK_SELECTOR)) {
 				walkBlocks(child, lines);
-			} else if (child.querySelector('pre')) {
-				const code = child.querySelector('code') || child;
-				const cls = (child.getAttribute('class') || '') + ' ' + (code.getAttribute('class') || '');
-				const m = cls.match(/language-([a-zA-Z0-9+#-]+)/);
-				const lang = m ? m[1] : '';
-				lines.push('```' + lang);
-				lines.push((code.textContent || '').replace(/\n+$/, ''));
-				lines.push('```');
-				lines.push('');
 			} else {
 				pushIfText(lines, inlineText(child));
 			}
@@ -226,6 +231,7 @@ function walkBlocks(parent: Element, lines: string[]): void {
 			walkBlocks(child, lines);
 		}
 	}
+	flushInlineBuffer();
 }
 
 export function getFeishuDocMarkdown(document: Document): string {
@@ -252,14 +258,8 @@ export function createFeishuClipTemplate(): Template {
 			{ name: 'tags', value: 'feishu', type: 'text' },
 		],
 		triggers: [
-			'https://www.feishu.cn/docx/',
-			'https://www.feishu.cn/wiki/',
-			'https://www.feishu.cn/sheets/',
-			'https://www.feishu.cn/base/',
-			'https://larksuite.com/docx/',
-			'https://larksuite.com/wiki/',
-			'https://larksuite.com/sheets/',
-			'https://larksuite.com/base/',
+			'/^https:\\/\\/(?:[^/]+\\.)?feishu\\.cn\\/(?:docx|wiki|sheets?|base)\\//',
+			'/^https:\\/\\/(?:[^/]+\\.)?larksuite\\.com\\/(?:docx|wiki|sheets?|base)\\//',
 		],
 	};
 }

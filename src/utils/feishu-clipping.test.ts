@@ -84,6 +84,14 @@ describe('getFeishuDocMarkdown', () => {
 		expect(md).toContain('> quoted');
 	});
 
+	it('preserves text around nested block elements in document order', () => {
+		const doc = docFromBody(
+			'<div><a href="https://example.com"><span>Before</span></a><table><tr><th>Name</th></tr><tr><td>Alice</td></tr></table><img src="https://example.com/image.png" alt="Example">After</div>',
+		);
+		const md = getFeishuDocMarkdown(doc);
+		expect(md).toMatch(/\[Before\]\(https:\/\/example\.com\)[\s\S]*\| Name \|[\s\S]*!\[Example\]\(https:\/\/example\.com\/image\.png\)[\s\S]*After/);
+	});
+
 	it('returns empty string when no doc root is found', () => {
 		const { document } = parseHTML('<html><body></body></html>');
 		expect(getFeishuDocMarkdown(document as unknown as Document)).toBe('');
@@ -96,7 +104,7 @@ describe('createFeishuClipTemplate', () => {
 		expect(t.id).toBe(FEISHU_CLIP_TEMPLATE_ID);
 		expect(t.path).toBe('Clippings/Feishu');
 		expect(t.properties.some((p) => p.name === 'platform' && p.value === 'feishu')).toBe(true);
-		expect((t.triggers ?? []).some((tr) => tr.includes('feishu.cn/docx/'))).toBe(true);
-		expect((t.triggers ?? []).some((tr) => tr.includes('larksuite.com/wiki/'))).toBe(true);
+		expect((t.triggers ?? []).some((tr) => tr.includes('feishu\\.cn'))).toBe(true);
+		expect((t.triggers ?? []).some((tr) => tr.includes('larksuite\\.com'))).toBe(true);
 	});
 });

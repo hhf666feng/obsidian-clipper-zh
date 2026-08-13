@@ -1163,7 +1163,7 @@
 		"message": "Use Feishu/Lark doc template automatically"
 	},
 	"feishuTemplateDescription": {
-		"message": "Automatically select the built-in Feishu/Lark document template and preserve tables, code blocks, and heading levels (instead of generic web extraction)."
+		"message": "Automatically select the built-in Feishu/Lark document template for supported document pages."
 	},
 	"videoTranscript": {
 		"message": "Include captions / transcript"

@@ -315,6 +315,7 @@ export async function saveSettings(settings?: Partial<Settings>): Promise<void> 
 			customCss: generalSettings.readerSettings.customCss
 		},
 		video_clipping_settings: generalSettings.videoClipping,
+		feishu_clipping_settings: generalSettings.feishuClipping,
 		stats: generalSettings.stats
 	});
 }
