@@ -5,6 +5,7 @@ import { generalSettings } from '../utils/storage-utils';
 import { addPropertyType } from './property-types-manager';
 import { getMessage } from '../utils/i18n';
 import { createVideoClipTemplate, syncVideoClipTemplate } from '../utils/video-clipping';
+import { createFeishuClipTemplate, syncFeishuClipTemplate } from '../utils/feishu-clipping';
 
 export let templates: Template[] = [];
 export let editingTemplateIndex = -1;
@@ -56,9 +57,13 @@ export async function loadTemplates(): Promise<Template[]> {
 			await saveTemplateSettings();
 		}
 
-		if (ensureVideoClipTemplate()) {
-			await saveTemplateSettings();
-		}
+	if (ensureVideoClipTemplate()) {
+		await saveTemplateSettings();
+	}
+
+	if (ensureFeishuClipTemplate()) {
+		await saveTemplateSettings();
+	}
 
 		// After loading templates, update global property types
 		await updateGlobalPropertyTypes(templates);
@@ -93,6 +98,28 @@ function ensureVideoClipTemplate(): boolean {
 		videoTemplate.triggers = [];
 	}
 	templates.splice(Math.min(1, templates.length), 0, videoTemplate);
+	return true;
+}
+
+function ensureFeishuClipTemplate(): boolean {
+	const feishuTemplate = createFeishuClipTemplate();
+	const existing = templates.find((template) => template.id === feishuTemplate.id);
+	if (existing) {
+		const { template: syncedTemplate, changed } = syncFeishuClipTemplate(
+			existing,
+			generalSettings.feishuClipping.enableFeishuTemplate,
+		);
+		if (changed) {
+			Object.assign(existing, syncedTemplate);
+			return true;
+		}
+		return false;
+	}
+
+	if (!generalSettings.feishuClipping.enableFeishuTemplate) {
+		feishuTemplate.triggers = [];
+	}
+	templates.splice(Math.min(1, templates.length), 0, feishuTemplate);
 	return true;
 }
 

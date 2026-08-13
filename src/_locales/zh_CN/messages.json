@@ -1159,6 +1159,12 @@
 	"videoTemplateDescription": {
 		"message": "B 站、抖音、YouTube 页面会自动选中内置视频剪切模板。"
 	},
+	"feishuTemplate": {
+		"message": "自动使用飞书 / Lark 文档模板"
+	},
+	"feishuTemplateDescription": {
+		"message": "自动为支持的飞书 / Lark 文档页面选择内置模板。"
+	},
 	"videoTranscript": {
 		"message": "包含字幕 / 转写"
 	},

@@ -51,6 +51,7 @@ export let generalSettings: Settings = {
 	ratings: [],
 	saveBehavior: 'addToObsidian',
 	videoClipping: { ...DEFAULT_VIDEO_CLIPPING_SETTINGS },
+	feishuClipping: { enableFeishuTemplate: true },
 	folderRouting: normalizeFolderRoutingSettings(DEFAULT_FOLDER_ROUTING_SETTINGS)
 };
 
@@ -96,6 +97,7 @@ interface StorageData {
 		customCss?: string;
 	};
 	video_clipping_settings?: Partial<Settings['videoClipping']>;
+	feishu_clipping_settings?: Partial<Settings['feishuClipping']>;
 	interpreter_settings?: {
 		interpreterModel?: string;
 		models?: ModelConfig[];
@@ -142,6 +144,7 @@ export async function loadSettings(): Promise<Settings> {
 		propertyTypes: [],
 		saveBehavior: 'addToObsidian',
 		videoClipping: { ...DEFAULT_VIDEO_CLIPPING_SETTINGS },
+		feishuClipping: { enableFeishuTemplate: true },
 		folderRouting: normalizeFolderRoutingSettings(DEFAULT_FOLDER_ROUTING_SETTINGS),
 		readerSettings: {
 			fontSize: 16,
@@ -247,6 +250,9 @@ export async function loadSettings(): Promise<Settings> {
 			cookieProfile: data.video_clipping_settings?.cookieProfile || defaultSettings.videoClipping.cookieProfile,
 			cookieFile: data.video_clipping_settings?.cookieFile || defaultSettings.videoClipping.cookieFile,
 		},
+		feishuClipping: {
+			enableFeishuTemplate: data.feishu_clipping_settings?.enableFeishuTemplate ?? defaultSettings.feishuClipping.enableFeishuTemplate,
+		},
 		stats: data.stats || defaultSettings.stats,
 		history: data.history || defaultSettings.history,
 		ratings: data.ratings || defaultSettings.ratings,
@@ -309,6 +315,7 @@ export async function saveSettings(settings?: Partial<Settings>): Promise<void> 
 			customCss: generalSettings.readerSettings.customCss
 		},
 		video_clipping_settings: generalSettings.videoClipping,
+		feishu_clipping_settings: generalSettings.feishuClipping,
 		stats: generalSettings.stats
 	});
 }

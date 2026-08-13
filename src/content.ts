@@ -14,6 +14,7 @@ import { updateSidebarWidth, addResizeHandle, cleanupResizeHandlers } from './ut
 import { parseForClip } from './utils/clip-utils';
 import { normalizeLazyLoadedImages } from './utils/lazy-images';
 import { detectVideoPlatform, findBestScopedVideoDownloadUrl } from './utils/video-clipping';
+import { detectFeishuDoc, getFeishuDocMarkdown, getFeishuDocInfo } from './utils/feishu-clipping';
 
 declare global {
 	interface Window {
@@ -335,6 +336,15 @@ function collectLiveVideoDownloadUrl(pageUrl: string): string {
 					wordCount: defuddled.wordCount,
 					metaTags: defuddled.metaTags || []
 				};
+
+				// 飞书 / Lark 文档：用结构化抽取替换 defuddle 的泛化正文，保留表格 / 代码 / 标题层级
+				const feishuBrand = detectFeishuDoc(document.URL);
+				if (feishuBrand) {
+					const feishuMarkdown = getFeishuDocMarkdown(document);
+					if (feishuMarkdown) response.content = feishuMarkdown;
+					extractedContent.feishuDocType = getFeishuDocInfo(document.URL).docType;
+				}
+
 				if (defuddled.title) {
 					highlighter.setPageTitle(defuddled.title);
 				}

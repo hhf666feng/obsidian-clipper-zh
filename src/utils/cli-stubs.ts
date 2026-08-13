@@ -63,6 +63,9 @@ export const generalSettings: Settings = {
 		cookieProfile: '',
 		cookieFile: '',
 	},
+	feishuClipping: {
+		enableFeishuTemplate: true,
+	},
 	folderRouting: {
 		defaultPath: 'Clippings',
 		rules: [],
